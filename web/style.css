@@ -1,19 +1,19 @@
-.thumbnail img {
+.work_thumb img {
     width: 100px;
     height: 100px;
     transition: width 0.2s, height 0.2s;
 }
-.thumbnail img:hover {
+.work_thumb img:hover {
     width: 110px;
     height: 110px;
 }
-#thumbnails {
+#main_list {
     max-width: 600px;
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;
 }
-.thumbnail {
+.work_thumb {
     width: 115px;
     height: 115px;
     display: flex;
@@ -21,13 +21,13 @@
     align-items: center;
     transition: width 0.2s, height 0.2s;
 }
-.main_image {
+.work_full {
     width: 500px;
     height: 500px;
     transition: width 0.2s, height 0.2s;
 }
 
-.main_image img {
+.work_full img {
     width: 490px;
     height: 490px;
     transition: width 0.2s, height 0.2s;
