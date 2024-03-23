@@ -1,17 +1,22 @@
 .work_thumb img {
-    width: 100px;
-    height: 100px;
-    transition: width 0.2s, height 0.2s;
+    width: auto;
+    height: auto;
+    max-height: 100px;
+    max-width: 100px;
+    transition: max-width 0.2s, max-height 0.2s;
 }
 .work_thumb img:hover {
-    width: 110px;
-    height: 110px;
+    max-width: 108px;
+    max-height: 108px;
+    height: auto;
 }
 #main_list {
     max-width: 600px;
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;
+    margin-left: auto;
+    margin-right: auto;
 }
 .work_thumb {
     width: 115px;
@@ -22,13 +27,56 @@
     transition: width 0.2s, height 0.2s;
 }
 .work_full {
-    width: 500px;
-    height: 500px;
+    max-width: 100%;
     transition: width 0.2s, height 0.2s;
 }
 
-.work_full img {
-    width: 490px;
-    height: 490px;
+.work_full .work_img {
+    max-width: 100%;
+    height: auto;
     transition: width 0.2s, height 0.2s;
+}
+.work_thumb_bar_entry {
+    margin: 2px;
+}
+
+.work_thumb_bar_entry img {
+    width: auto;
+    height: auto;
+    max-height: 100px;
+    max-width: 100px;
+}
+
+.work_thumbnails_bar {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    overflow-x: scroll;
+}
+
+.work_info {
+    display: flex;
+    margin: 10px;
+}
+
+.work_details {
+    margin-left: 15px;
+}
+
+.work_artist img {
+    width: 100px;
+    height: auto;
+}
+
+.work_title {
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+.work_artist_name {
+    margin-top: 0;
+}
+
+.hide {
+    display: none !important;
 }
