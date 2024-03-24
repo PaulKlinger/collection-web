@@ -28,13 +28,16 @@ window.onload = () => {
 
       const work_elem = parser.parseFromString(`
         <div class="work_thumb" id="work_${work_id}">
-          <div class="close_work hide only_full">X</div>
+          <div class="close_work hide only_full">🞭</div>
           <div class="work_info hide only_full">
             <div class="work_artist">
               <img src="${artist_img_path}"/>
             </div>
             <div class="work_details">
-              <p class="work_title">“${work.title}” <span class="work_year">(${work.year})</span></p>
+              <p class="work_head">
+                <span class="work_title">“${work.title}”</span>
+                <span class="work_year">(${work.year})</span>
+              </p>
               <p class="work_artist_name">${artist.name}</p>
               <p class="work_other">acquired: ${work.acquired}<br />from: ${work['bought where']}</p>
             </div>
