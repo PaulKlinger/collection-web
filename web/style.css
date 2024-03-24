@@ -33,7 +33,7 @@ footer {
     height: auto;
 }
 #main_list {
-    max-width: 575px;
+    max-width: 560px;
     width: auto;
     display: flex;
     flex-direction: row;
@@ -42,8 +42,8 @@ footer {
     margin-right: auto;
 }
 .work_thumb {
-    width: 115px;
-    height: 115px;
+    width: 112px;
+    height: 112px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -60,10 +60,11 @@ footer {
 }
 
 .close_work {
-    font-size: 20pt;
+    font-size: 25pt;
+    font-weight: 800;
     color: rgb(150, 150, 150);
     position: absolute;
-    top: 0px;
+    top: -10px;
     right: 5px;
 }
 

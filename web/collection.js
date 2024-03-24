@@ -28,7 +28,7 @@ window.onload = () => {
 
       const work_elem = parser.parseFromString(`
         <div class="work_thumb" id="work_${work_id}">
-          <div class="close_work hide only_full">🞭</div>
+          <div class="close_work hide only_full">×</div>
           <div class="work_info hide only_full">
             <div class="work_artist">
               <img src="${artist_img_path}"/>
