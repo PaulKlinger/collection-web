@@ -1,4 +1,8 @@
+html {
+  height: 100%;
+}
 body {
+  margin: 0;
   font-family: "Noto Serif", serif;
   font-optical-sizing: auto;
   font-weight: 400;
@@ -14,6 +18,10 @@ body {
 }
 
 footer {
+  position: absolute;
+  bottom: 0;
+  height: 20px;
+  margin: 8px;
   font-size: 10pt;
   color: rgb(150, 150, 150);
 }
@@ -29,6 +37,24 @@ footer {
   max-width: 108px;
   max-height: 108px;
   height: auto;
+}
+#main_container {
+  margin: 0;
+  position: relative;
+  min-height: 100vh;
+}
+#content_container {
+  margin: 8px;
+  padding-bottom: 36px;
+}
+
+#page_select {
+  font-size: 14pt;
+  color: rgb(59, 59, 59);
+  text-align: center;
+}
+#page_select span {
+  margin: 20px;
 }
 #main_list {
   max-width: 560px;
@@ -121,6 +147,7 @@ footer {
 
 .work_artist_name {
   margin-top: 0;
+  text-decoration: underline;
 }
 
 .hide {

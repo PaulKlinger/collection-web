@@ -31,6 +31,8 @@ create_work_elem = (work, artist) => {
   const artist_img_path = "./data/imgs/artists/" + artist.img;
   let work_thumbnails_html = "";
   const all_imgs = [work.main_img].concat(work.imgs);
+
+  // create thumbnail imgs
   for (const [i, img] of all_imgs.entries()) {
     thumbnail_path = "./data/imgs/works/thumbnails/" + img;
     work_thumbnails_html += `
@@ -40,6 +42,7 @@ create_work_elem = (work, artist) => {
     `;
   }
 
+  // create main element
   const work_elem = elem_from_string(
     `
     <div class="entry_thumb work" id="work_${work.work_id}">
@@ -65,6 +68,17 @@ create_work_elem = (work, artist) => {
   `
   );
 
+  // add click handler for artist (switch to artist page and expand matching)
+  open_artist = () => {
+    populate_artists();
+    document
+      .querySelector(`#artist_${artist.artist_id} .entry_main_img`)
+      .onclick();
+  };
+  work_elem.querySelector(".work_artist").onclick = open_artist;
+  work_elem.querySelector(".work_artist_name").onclick = open_artist;
+
+  // add click handler for thumbnail images
   for (const [i, img] of all_imgs.entries()) {
     work_elem.querySelector(
       `#work_${work.work_id}_thumb_bar_img_${i}`
@@ -75,6 +89,7 @@ create_work_elem = (work, artist) => {
     };
   }
 
+  // add click handler for close button
   work_elem.querySelector(".close").onclick = () => {
     work_elem.classList.replace("entry_full", "entry_thumb");
     work_elem
@@ -84,6 +99,8 @@ create_work_elem = (work, artist) => {
       .querySelector(".entry_main_img")
       .setAttribute("src", main_img_thumb_path);
   };
+
+  // add click handler for opening work
   work_elem.querySelector(".entry_main_img").onclick = () => {
     if (work_elem.classList.contains("entry_thumb")) {
       work_elem.classList.replace("entry_thumb", "entry_full");
@@ -109,6 +126,8 @@ populate_works = () => {
 create_artist_elem = (artist, works) => {
   const img_path = "./data/imgs/artists/" + artist.img;
 
+  // create country string, depending on whether artist lives in
+  // their country of birth
   let artist_country_str;
   if (artist.residence !== artist.origin) {
     artist_country_str = `${artist.origin} | ${artist.residence}`;
@@ -117,7 +136,7 @@ create_artist_elem = (artist, works) => {
   }
 
   const artist_elem = elem_from_string(`
-    <div class="entry_thumb artist" id="artist_${artist.id}">
+    <div class="entry_thumb artist" id="artist_${artist.artist_id}">
       <div class="artist_non_work">
         <div class="close hide only_full">×</div>
         <img src="${img_path}" class="entry_main_img" />
