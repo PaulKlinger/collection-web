@@ -96,6 +96,8 @@ footer {
 
 .work_title {
   font-size: 14pt;
+  margin-top: 5px;
+  margin-bottom: 5px;
 }
 
 .work_head {
@@ -117,15 +119,36 @@ footer {
   height: auto;
 }
 
-.work_title {
-  margin-top: 5px;
-  margin-bottom: 5px;
-}
-
 .work_artist_name {
   margin-top: 0;
 }
 
 .hide {
   display: none !important;
+}
+
+.entry_full .artist_non_work {
+  display: flex;
+  margin: 10px;
+}
+
+.artist.entry_full .artist_non_work .entry_main_img {
+  width: 50%;
+  height: auto;
+  border-radius: 10px;
+}
+
+.artist_details {
+  margin-left: 10px;
+}
+
+.artist_name {
+  font-size: 14pt;
+}
+
+.artist_works_list {
+  margin: 10px;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
 }

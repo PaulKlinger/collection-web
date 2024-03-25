@@ -42,7 +42,7 @@ create_work_elem = (work, artist) => {
 
   const work_elem = elem_from_string(
     `
-    <div class="entry_thumb" id="work_${work.work_id}">
+    <div class="entry_thumb work" id="work_${work.work_id}">
       <div class="close hide only_full">×</div>
       <div class="entry_info hide only_full">
         <div class="work_artist">
@@ -118,14 +118,24 @@ create_artist_elem = (artist, works) => {
 
   const artist_elem = elem_from_string(`
     <div class="entry_thumb artist" id="artist_${artist.id}">
-      <div class="close hide only_full">×</div>
-      <div class="hide only_full">
-        <p class="artist_name">${artist.name}</p>
-        <p class="artist_country">${artist_country_str}</p>
+      <div class="artist_non_work">
+        <div class="close hide only_full">×</div>
+        <img src="${img_path}" class="entry_main_img" />
+        <div class="artist_details hide only_full">
+          <p class="artist_name">${artist.name}</p>
+          <p class="artist_country">${artist_country_str}</p>
+        </div>
       </div>
-      <img src="${img_path}" class="entry_main_img" />
+      <div class="artist_works_list hide only_full">
+      </div>
     </div>
   `);
+
+  for (const work of works) {
+    artist_elem
+      .querySelector(".artist_works_list")
+      .append(create_work_elem(work, artist));
+  }
 
   close_button = artist_elem.querySelector(".close");
   close_button.onclick = () => {
@@ -133,13 +143,20 @@ create_artist_elem = (artist, works) => {
     artist_elem
       .querySelectorAll(".only_full")
       .forEach((n) => n.classList.add("hide"));
+    for (const work_close_button of artist_elem.querySelectorAll(
+      ".artist_works_list .close"
+    )) {
+      work_close_button.onclick();
+    }
   };
   artist_elem.querySelector(".entry_main_img").onclick = () => {
     if (artist_elem.classList.contains("entry_thumb")) {
       artist_elem.classList.replace("entry_thumb", "entry_full");
       artist_elem
         .querySelectorAll(".only_full")
-        .forEach((n) => n.classList.remove("hide"));
+        .forEach((n) =>
+          n.matches(".work .only_full") ? null : n.classList.remove("hide")
+        );
     }
   };
   return artist_elem;
