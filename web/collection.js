@@ -71,7 +71,7 @@ create_work_elem = (work, artist) => {
         ${work_thumbnails_html}
       </div>
     </div>
-  `
+  `,
   );
 
   // add click handler for artist (switch to artist page and expand matching)
@@ -87,7 +87,7 @@ create_work_elem = (work, artist) => {
   // add click handler for thumbnail images
   for (const [i, img] of all_imgs.entries()) {
     work_elem.querySelector(
-      `#work_${work.work_id}_thumb_bar_img_${i}`
+      `#work_${work.work_id}_thumb_bar_img_${i}`,
     ).onclick = () => {
       work_elem
         .querySelector(".entry_main_img")
@@ -148,7 +148,7 @@ create_artist_elem = (artist, works) => {
   }
   if (artist.instagram !== "") {
     const instagram_link = `https://www.instagram.com/${artist.instagram.slice(
-      1
+      1,
     )}/`;
     artist_links += `<p class="artist_link"><a href="${instagram_link}">instagram</a></p>`;
   }
@@ -184,7 +184,7 @@ create_artist_elem = (artist, works) => {
       .querySelectorAll(".only_full")
       .forEach((n) => n.classList.add("hide"));
     for (const work_close_button of artist_elem.querySelectorAll(
-      ".artist_works_list .close"
+      ".artist_works_list .close",
     )) {
       work_close_button.onclick();
     }
@@ -196,7 +196,7 @@ create_artist_elem = (artist, works) => {
       artist_elem.classList.replace("entry_thumb", "entry_full");
       artist_elem.querySelectorAll(".only_full").forEach((n) =>
         // don't expand works
-        n.matches(".work .only_full") ? null : n.classList.remove("hide")
+        n.matches(".work .only_full") ? null : n.classList.remove("hide"),
       );
     }
   };
@@ -210,8 +210,8 @@ populate_artists = () => {
     artists_elem.append(
       create_artist_elem(
         artist,
-        Object.values(data.works).filter((w) => w.artist_id === artist_id)
-      )
+        Object.values(data.works).filter((w) => w.artist_id === artist_id),
+      ),
     );
   }
 };
