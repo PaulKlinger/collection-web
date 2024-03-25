@@ -129,6 +129,7 @@ footer {
   border-radius: 10px;
   margin: 10px;
 }
+
 .entry_thumb_bar_entry {
   margin: 2px;
 }
@@ -139,6 +140,7 @@ footer {
   max-height: 100px;
   max-width: 100px;
   cursor: pointer;
+  border-radius: 10px;
 }
 
 .entry_thumbnails_bar {
