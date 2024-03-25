@@ -57,7 +57,13 @@ create_work_elem = (work, artist) => {
             <span class="work_year">(${work.year})</span>
           </p>
           <p class="work_artist_name">${artist.name}</p>
-          <p class="work_other">acquired: ${work.acquired}<br />from: ${work["bought where"]}</p>
+          <p class="work_other">
+            <span class="work_other_fieldname">acquired:</span>
+            ${work.acquired}
+            <br />
+            <span class="work_other_fieldname">from:</span>
+            ${work["bought where"]}
+          </p>
         </div>
       </div>
       <img src="${main_img_thumb_path}" class="entry_main_img">
@@ -135,6 +141,19 @@ create_artist_elem = (artist, works) => {
     artist_country_str = artist.origin;
   }
 
+  // create links
+  artist_links = "";
+  if (artist.website !== "") {
+    artist_links += `<p class="artist_link"><a href="${artist.website}">website</a></p>`;
+  }
+  if (artist.instagram !== "") {
+    const instagram_link = `https://www.instagram.com/${artist.instagram.slice(
+      1
+    )}/`;
+    artist_links += `<p class="artist_link"><a href="${instagram_link}">instagram</a></p>`;
+  }
+
+  // create main element
   const artist_elem = elem_from_string(`
     <div class="entry_thumb artist" id="artist_${artist.artist_id}">
       <div class="artist_non_work">
@@ -143,6 +162,7 @@ create_artist_elem = (artist, works) => {
         <div class="artist_details hide only_full">
           <p class="artist_name">${artist.name}</p>
           <p class="artist_country">${artist_country_str}</p>
+          ${artist_links}
         </div>
       </div>
       <div class="artist_works_list hide only_full">
@@ -150,14 +170,15 @@ create_artist_elem = (artist, works) => {
     </div>
   `);
 
+  // add works
   for (const work of works) {
     artist_elem
       .querySelector(".artist_works_list")
       .append(create_work_elem(work, artist));
   }
 
-  close_button = artist_elem.querySelector(".close");
-  close_button.onclick = () => {
+  // add click handler for close button
+  artist_elem.querySelector(".close").onclick = () => {
     artist_elem.classList.replace("entry_full", "entry_thumb");
     artist_elem
       .querySelectorAll(".only_full")
@@ -168,14 +189,15 @@ create_artist_elem = (artist, works) => {
       work_close_button.onclick();
     }
   };
+
+  // add click handler for opening artist
   artist_elem.querySelector(".entry_main_img").onclick = () => {
     if (artist_elem.classList.contains("entry_thumb")) {
       artist_elem.classList.replace("entry_thumb", "entry_full");
-      artist_elem
-        .querySelectorAll(".only_full")
-        .forEach((n) =>
-          n.matches(".work .only_full") ? null : n.classList.remove("hide")
-        );
+      artist_elem.querySelectorAll(".only_full").forEach((n) =>
+        // don't expand works
+        n.matches(".work .only_full") ? null : n.classList.remove("hide")
+      );
     }
   };
   return artist_elem;
