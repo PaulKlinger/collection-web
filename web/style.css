@@ -18,14 +18,14 @@ footer {
   color: rgb(150, 150, 150);
 }
 
-.work_thumb img {
+.entry_thumb img {
   width: auto;
   height: auto;
   max-height: 100px;
   max-width: 100px;
   transition: max-width 0.2s, max-height 0.2s;
 }
-.work_thumb img:hover {
+.entry_thumb img:hover {
   max-width: 108px;
   max-height: 108px;
   height: auto;
@@ -39,7 +39,7 @@ footer {
   margin-left: auto;
   margin-right: auto;
 }
-.work_thumb {
+.entry_thumb {
   width: 112px;
   height: 112px;
   display: flex;
@@ -47,7 +47,7 @@ footer {
   align-items: center;
   transition: width 0.2s, height 0.2s;
 }
-.work_full {
+.entry_full {
   position: relative;
   width: 100%;
   transition: width 0.2s, height 0.2s;
@@ -66,30 +66,30 @@ footer {
   right: 5px;
 }
 
-.work_full .work_img {
+.entry_full .entry_main_img {
   max-width: 100%;
   height: auto;
   transition: width 0.2s, height 0.2s;
 }
-.work_thumb_bar_entry {
+.entry_thumb_bar_entry {
   margin: 2px;
 }
 
-.work_thumb_bar_entry img {
+.entry_thumb_bar_entry img {
   width: auto;
   height: auto;
   max-height: 100px;
   max-width: 100px;
 }
 
-.work_thumbnails_bar {
+.entry_thumbnails_bar {
   display: flex;
   flex-direction: row;
   flex-wrap: nowrap;
   overflow-x: scroll;
 }
 
-.work_info {
+.entry_info {
   display: flex;
   margin: 10px;
 }
