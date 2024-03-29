@@ -77,9 +77,15 @@ create_work_elem = (work, artist) => {
   // add click handler for artist (switch to artist page and expand matching)
   open_artist = () => {
     populate_artists();
-    document
-      .querySelector(`#artist_${artist.artist_id} .entry_main_img`)
-      .onclick();
+    const artist_elem = document.querySelector(
+      `#artist_${artist.artist_id} .entry_main_img`,
+    );
+    artist_elem.onclick();
+    artist_elem.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+      inline: "center",
+    });
   };
   work_elem.querySelector(".work_artist").onclick = open_artist;
   work_elem.querySelector(".work_artist_name").onclick = open_artist;
