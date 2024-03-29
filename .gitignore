@@ -1,4 +1,7 @@
 **/.ipynb_checkpoints/
 env
+minimal_env
+scratchpad
 secrets
 web/data
+**/__pycache__/
