@@ -233,7 +233,8 @@ footer {
 }
 
 .artist_works_list {
-  margin: 10px;
+  max-width: 100%;
+  padding: 10px;
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
