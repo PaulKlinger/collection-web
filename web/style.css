@@ -26,11 +26,22 @@ body {
 }
 
 footer {
+  width: 100%;
   position: absolute;
   bottom: 8px;
   height: 20px;
   padding: 8px;
   font-size: 10pt;
+  color: rgb(150, 150, 150);
+}
+
+footer a {
+  position: absolute;
+  right: 10px;
+}
+
+footer :link,
+footer :visited {
   color: rgb(150, 150, 150);
 }
 
