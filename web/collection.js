@@ -6,8 +6,39 @@ window.onload = () => {
     .then((data_in) => {
       data = data_in;
       setup_buttons();
-      populate_works();
+      setup_page_from_url();
     });
+};
+
+setup_page_from_url = () => {
+  const params = new URLSearchParams(window.location.search);
+  setup_page(params.get("page"), params.get("work"), params.get("artist"));
+};
+
+setup_page = (page, work, artist) => {
+  if (page === "artists") {
+    populate_artists();
+  } else {
+    populate_works();
+  }
+  if (artist !== null) {
+    const elem = document.getElementById(`artist_${artist}`);
+    elem.querySelector(".entry_main_img").onclick();
+    elem.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+      inline: "center",
+    });
+  }
+  if (work !== null) {
+    const elem = document.getElementById(`work_${work}`);
+    elem.querySelector(".entry_main_img").onclick();
+    elem.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+      inline: "center",
+    });
+  }
 };
 
 elem_from_string = (s) => {
@@ -15,13 +46,42 @@ elem_from_string = (s) => {
   return parser.parseFromString(s, "text/html").body.childNodes[0];
 };
 
+set_params = (page, work, artist) => {
+  const baseurl = window.location.href.split("?")[0];
+  const params = new URLSearchParams(window.location.search);
+  if (page === "works") {
+    params.delete("page");
+  } else if (page !== null) {
+    params.set("page", page);
+  }
+  if (work === null) {
+    params.delete("work");
+  } else {
+    params.set("work", work);
+  }
+  if (artist === null) {
+    if (page === "artists" || params.get("page") !== "artists") {
+      params.delete("artist");
+    }
+  } else {
+    params.set("artist", artist);
+  }
+  if (params.size === 0) {
+    history.replaceState(null, "", baseurl);
+  } else {
+    history.replaceState(null, "", `${baseurl}?${params.toString()}`);
+  }
+};
+
 setup_buttons = () => {
   document.querySelector("#works_select").onclick = () => {
     populate_works();
+    set_params("works", null, null);
   };
 
   document.querySelector("#artists_select").onclick = () => {
     populate_artists();
+    set_params("artists", null, null);
   };
 };
 
@@ -45,7 +105,7 @@ create_work_elem = (work, artist) => {
   // create main element
   const work_elem = elem_from_string(
     `
-    <div class="entry_thumb work" id="work_${work.work_id}">
+    <div class="entry_thumb work" id="work_${work.id}">
       <div class="close hide only_full">×</div>
       <div class="entry_info hide only_full">
         <div class="work_artist">
@@ -76,16 +136,8 @@ create_work_elem = (work, artist) => {
 
   // add click handler for artist (switch to artist page and expand matching)
   open_artist = () => {
-    populate_artists();
-    const artist_elem = document.querySelector(
-      `#artist_${artist.artist_id} .entry_main_img`,
-    );
-    artist_elem.onclick();
-    artist_elem.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-      inline: "center",
-    });
+    set_params("artists", null, artist.artist_id);
+    setup_page("artists", null, artist.artist_id);
   };
   work_elem.querySelector(".work_artist").onclick = open_artist;
   work_elem.querySelector(".work_artist_name").onclick = open_artist;
@@ -103,6 +155,7 @@ create_work_elem = (work, artist) => {
 
   // add click handler for close button
   work_elem.querySelector(".close").onclick = () => {
+    set_params(null, null, null);
     work_elem.classList.replace("entry_full", "entry_thumb");
     work_elem
       .querySelectorAll(".only_full")
@@ -114,6 +167,7 @@ create_work_elem = (work, artist) => {
 
   // add click handler for opening work
   work_elem.querySelector(".entry_main_img").onclick = () => {
+    set_params(null, work.id, null);
     if (work_elem.classList.contains("entry_thumb")) {
       work_elem.classList.replace("entry_thumb", "entry_full");
       work_elem
@@ -185,6 +239,7 @@ create_artist_elem = (artist, works) => {
 
   // add click handler for close button
   artist_elem.querySelector(".close").onclick = () => {
+    set_params("artists", null, null);
     artist_elem.classList.replace("entry_full", "entry_thumb");
     artist_elem
       .querySelectorAll(".only_full")
@@ -198,6 +253,7 @@ create_artist_elem = (artist, works) => {
 
   // add click handler for opening artist
   artist_elem.querySelector(".entry_main_img").onclick = () => {
+    set_params("artists", null, artist.artist_id);
     if (artist_elem.classList.contains("entry_thumb")) {
       artist_elem.classList.replace("entry_thumb", "entry_full");
       artist_elem.querySelectorAll(".only_full").forEach((n) =>
