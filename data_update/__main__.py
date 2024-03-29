@@ -1,15 +1,10 @@
 import json
 import logging
 import os
-import re
-from glob import glob
 from typing import Any
 
-import numpy as np
-import pandas as pd
 import pygsheets
 import pysftp
-import requests
 
 from data_update.utils import GooglePhotos
 from data_update.utils import put_r_portable
@@ -36,7 +31,8 @@ def get_tabular_data() -> dict[str, Any]:
     # authorization
     gc = pygsheets.authorize(service_file="./secrets/gdocs_service.json")
     collection_sheet = gc.open_by_url(
-        "https://docs.google.com/spreadsheets/d/1Vmr4Eqm3lLJK9b4B1KGpfWJXNCfodEkRtT9pdRNCGgA/edit?usp=drive_link"
+        "https://docs.google.com/spreadsheets/d/"
+        "1Vmr4Eqm3lLJK9b4B1KGpfWJXNCfodEkRtT9pdRNCGgA/edit?usp=drive_link"
     )
 
     df = collection_sheet.sheet1.get_as_df()
@@ -168,7 +164,7 @@ def main():
     data = get_tabular_data()
 
     logging.info("checking for new photos")
-    all_photo_fnames = get_photos()
+    get_photos()
 
     logging.info("Adding photo data")
     add_image_names_to_data(data)
