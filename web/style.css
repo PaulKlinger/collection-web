@@ -135,6 +135,7 @@ footer :visited {
 }
 
 .entry_full .entry_main_img {
+  width: 100%;
   max-width: calc(min(100% - 20px, 520px));
   transition:
     width 0.2s,
