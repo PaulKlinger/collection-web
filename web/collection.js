@@ -85,16 +85,65 @@ setup_buttons = () => {
   };
 };
 
+setup_360_vid = (vid_elem) => {
+  // clone node to remove any potentially still active event listeners
+  const vid = vid_elem.cloneNode(true);
+  vid_elem.replaceWith(vid);
+
+  vid.last_updated = Date.now();
+  vid.addEventListener(
+    "pointerdown",
+    (e) => {
+      if (e.buttons & (1 === 1)) {
+        vid.pause();
+        vid.start_x = e.offsetX;
+        vid.start_cur_time = vid.currentTime;
+      }
+      e.preventDefault();
+    },
+    true,
+  );
+  vid.addEventListener(
+    "pointermove",
+    (e) => {
+      // seek to new position if mouse/touch is pressed and
+      // it's been at least 20ms since the last seek
+      if (e.buttons & (1 === 1) && Date.now() - vid.last_updated > 20) {
+        if (vid.start_cur_time === undefined) {
+          // pointer down happened outside of video element
+          vid.pause();
+          vid.start_cur_time = vid.currentTime;
+          vid.start_x = e.offsetX;
+          return;
+        }
+        if (!(vid.duration > 0)) {
+          return;
+        }
+        // fraction of video element width that the pointer has moved since start of motion
+        const fraction_moved = (e.offsetX - vid.start_x) / vid.offsetWidth;
+        const new_time =
+          (vid.start_cur_time - vid.duration * fraction_moved + vid.duration) %
+          vid.duration;
+        vid.currentTime = new_time;
+        vid.last_updated = Date.now();
+        e.preventDefault();
+      }
+    },
+    true,
+  );
+};
+
 create_work_elem = (work, artist) => {
   const main_img_thumb_path = "./data/imgs/works/thumbnails/" + work.main_img;
   const main_img_full_path = "./data/imgs/works/full_res/" + work.main_img;
   const artist_img_path = "./data/imgs/artists/" + artist.img;
   let work_thumbnails_html = "";
-  const all_imgs = [work.main_img].concat(work.imgs);
+  const all_imgs = [work.main_img].concat(work.videos || [], work.imgs);
 
   // create thumbnail imgs
   for (const [i, img] of all_imgs.entries()) {
-    thumbnail_path = "./data/imgs/works/thumbnails/" + img;
+    thumbnail_path =
+      img.thumbnail_path || "./data/imgs/works/thumbnails/" + img;
     work_thumbnails_html += `
       <div id="work_${work.work_id}_thumb_bar_img_${i}" class="entry_thumb_bar_entry">
         <img src="${thumbnail_path}" />
@@ -126,7 +175,11 @@ create_work_elem = (work, artist) => {
           </p>
         </div>
       </div>
-      <img src="${main_img_thumb_path}" class="entry_main_img">
+      <span class="loader only_full hide"></span>
+      <img src="${main_img_thumb_path}" class="entry_main_img entry_main">
+      <div class="video_container entry_main hide">
+          <video src="" loop autoplay muted></video>
+      </div>
       <div class="entry_thumbnails_bar hide only_full">
         ${work_thumbnails_html}
       </div>
@@ -147,15 +200,27 @@ create_work_elem = (work, artist) => {
     work_elem.querySelector(
       `#work_${work.work_id}_thumb_bar_img_${i}`,
     ).onclick = () => {
-      work_elem
-        .querySelector(".entry_main_img")
-        .setAttribute("src", "./data/imgs/works/full_res/" + img);
+      if (img.video_path) {
+        work_elem.querySelector(".video_container").classList.remove("hide");
+        work_elem.querySelector(".entry_main_img").classList.add("hide");
+        setup_360_vid(work_elem.querySelector("video"));
+        // need to do querySelector again, because setup_360_vid replaces the element
+        work_elem.querySelector("video").src = img.video_path;
+      } else {
+        work_elem.querySelector(".entry_main_img").classList.remove("hide");
+        work_elem.querySelector(".video_container").classList.add("hide");
+        work_elem
+          .querySelector(".entry_main_img")
+          .setAttribute("src", "./data/imgs/works/full_res/" + img);
+      }
     };
   }
 
   // add click handler for close button
   work_elem.querySelector(".close").onclick = () => {
     set_params(null, null, null);
+    work_elem.querySelector(".entry_main_img").classList.remove("hide");
+    work_elem.querySelector(".video_container").classList.add("hide");
     work_elem.classList.replace("entry_full", "entry_thumb");
     work_elem
       .querySelectorAll(".only_full")
@@ -218,7 +283,7 @@ create_artist_elem = (artist, works) => {
     <div class="entry_thumb artist" id="artist_${artist.artist_id}">
       <div class="artist_non_work">
         <div class="close hide only_full">×</div>
-        <img src="${img_path}" class="entry_main_img" />
+        <img src="${img_path}" class="entry_main_img entry_main" />
         <div class="artist_details hide only_full">
           <p class="artist_name">${artist.name}</p>
           <p class="artist_country">${artist_country_str}</p>

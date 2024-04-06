@@ -122,6 +122,7 @@ footer :visited {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
+  min-height: 400px;
 }
 
 .close {
@@ -134,7 +135,9 @@ footer :visited {
   cursor: pointer;
 }
 
-.entry_full .entry_main_img {
+.entry_full .entry_main {
+  position: relative;
+  z-index: 6;
   width: 100%;
   max-width: calc(min(100% - 20px, 520px));
   transition:
@@ -230,7 +233,7 @@ footer :visited {
   margin: 10px;
 }
 
-.artist.entry_full .artist_non_work .entry_main_img {
+.artist.entry_full .artist_non_work .entry_main {
   width: 50%;
   height: auto;
   border-radius: 10px;
@@ -257,4 +260,66 @@ footer :visited {
   margin-top: 0;
   font-size: 11pt;
   word-break: break-all;
+}
+
+.video_container {
+  touch-action: none;
+  user-select: none;
+  overflow: hidden;
+  aspect-ratio: 1; /* no idea why, but without this it's 5px too high... */
+}
+
+.entry_main video {
+  width: 100%;
+}
+
+.loader {
+  z-index: 5;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  position: absolute;
+  top: 300px;
+  left: calc(50% - 24px);
+  animation: rotate 1s linear infinite;
+}
+
+@media (width > 750px) {
+  .loader {
+    left: calc(50% - 24px - 121px / 2);
+  }
+}
+
+.loader::before {
+  content: "";
+  box-sizing: border-box;
+  position: absolute;
+  inset: 0px;
+  border-radius: 50%;
+  border: 5px solid #5f5f5f;
+  animation: prixClipFix 2s linear infinite;
+}
+
+@keyframes rotate {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes prixClipFix {
+  0% {
+    clip-path: polygon(50% 50%, 0 0, 0 0, 0 0, 0 0, 0 0);
+  }
+  25% {
+    clip-path: polygon(50% 50%, 0 0, 100% 0, 100% 0, 100% 0, 100% 0);
+  }
+  50% {
+    clip-path: polygon(50% 50%, 0 0, 100% 0, 100% 100%, 100% 100%, 100% 100%);
+  }
+  75% {
+    clip-path: polygon(50% 50%, 0 0, 100% 0, 100% 100%, 0 100%, 0 100%);
+  }
+  100% {
+    clip-path: polygon(50% 50%, 0 0, 100% 0, 100% 100%, 0 100%, 0 0);
+  }
 }
