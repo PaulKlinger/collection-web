@@ -6,6 +6,7 @@ from typing import Any
 import pygsheets
 import pysftp
 
+from data_update.utils import GoogleDrive
 from data_update.utils import GooglePhotos
 from data_update.utils import put_r_portable
 
@@ -13,10 +14,21 @@ SECRETS = {
     "GDRIVE_SECRET": "./secrets/gdocs_service.json",
     "GPHOTOS_SECRET": "./secrets/google_photos_credentials.json",
     "GPHOTOS_SECRET_STORAGE": "./secrets/photos_api_storage.json",
+    "GDRIVE_VIDEOS_SECRET": "./secrets/drive_api_storage.json",
     "FTP_SECRET": "./secrets/ftp_secrets.json",
 }
-GPHOTOS_SECRET_STORAGE_ENV_VAR = "GPHOTOS_SECRET_STORAGE"
-FTP_SECRET_SOTRAGE_ENV_VAR = "FTP_SECRET"
+
+
+WEB_BASE_PATH = "./web/"
+
+WORK_IMGS_PATH = "data/media/works/full_res/"
+WORK_THUMBNAILS_PATH = "data/media/works/thumbnails/"
+ARTIST_IMG_PATH = "data/media/artists/"
+WORK_VID_PATH = "data/media/works/vids/"
+WORK_VID_THUMB_PATH = "data/media/works/vidthumbs/"
+
+GDRIVE_360_VID_FOLDER = "1dkYiFVlsWoRUVoacKhSUs7mDn7F2-gpf"
+GDRIVE_360_VID_THUMB_FOLDER = "1lmPF0VXHsV_UKPV1tchHIGyJI3lL_kui"
 
 
 def write_secrets_to_file():
@@ -78,26 +90,54 @@ def get_tabular_data() -> dict[str, Any]:
     }
 
 
-def add_image_names_to_data(data: dict[str, Any]) -> None:
+def add_media_info_to_data(data: dict[str, Any]) -> None:
     gphotos = GooglePhotos(
         "./secrets/google_photos_credentials.json", "./secrets/photos_api_storage.json"
     )
-    data["works"] = {k: v | {"imgs": []} for k, v in data["works"].items()}
+    data["works"] = {k: v | {"media": []} for k, v in data["works"].items()}
 
     for photo in gphotos.get_album_contents(album_title="collection web"):
-        work_id = int(photo["description"].removesuffix("*"))
-        if photo["description"].endswith("*"):
-            data["works"][work_id]["main_img"] = photo["filename"]
-        else:
-            data["works"][work_id]["imgs"].append(photo["filename"])
+        media_type, work_id, media_index = photo["description"].split("_")
+        assert media_type == "img"
+        data["works"][int(work_id)]["media"].append(
+            {
+                "type": media_type,
+                "full_path": os.path.join(WORK_IMGS_PATH, photo["filename"]),
+                "thumb_path": os.path.join(WORK_THUMBNAILS_PATH, photo["filename"]),
+                "media_index": int(media_index),
+            }
+        )
         print(".", end="")
 
     for photo in gphotos.get_album_contents(album_title="collection artists web"):
         artist_id = photo["description"]
         if artist_id not in data["artists"]:
             continue
-        data["artists"][artist_id]["img"] = photo["filename"]
+        data["artists"][artist_id]["img"] = os.path.join(
+            ARTIST_IMG_PATH, photo["filename"]
+        )
         print(".", end="")
+
+    gdrive = GoogleDrive(
+        "./secrets/google_photos_credentials.json", "./secrets/drive_api_storage.json"
+    )
+
+    for file in gdrive.get_folder_contents(GDRIVE_360_VID_FOLDER):
+        name, ext = os.path.splitext(file["name"])
+        media_type, work_id, media_index = name.split("_")
+        assert media_type == "vid"
+        thumbnail_name = file["name"].replace("vid", "vidthumb").replace("mp4", "webp")
+        data["works"][int(work_id)]["media"].append(
+            {
+                "type": media_type,
+                "full_path": os.path.join(WORK_VID_PATH, file["name"]),
+                "thumb_path": os.path.join(WORK_VID_THUMB_PATH, thumbnail_name),
+                "media_index": int(media_index),
+            }
+        )
+
+    for work in data["works"].values():
+        work["media"].sort(key=lambda x: x["media_index"])
 
 
 def get_photos() -> set[str]:
@@ -108,13 +148,13 @@ def get_photos() -> set[str]:
     # download work thumbnails and full images
     gphotos.download_album(
         "collection web",
-        "./web/data/imgs/works/thumbnails/",
+        os.path.join(WEB_BASE_PATH, WORK_THUMBNAILS_PATH),
         200,
         200,
     )
     gphotos.download_album(
         "collection web",
-        "./web/data/imgs/works/full_res/",
+        os.path.join(WEB_BASE_PATH, WORK_IMGS_PATH),
         1500,
         1500,
     )
@@ -122,9 +162,21 @@ def get_photos() -> set[str]:
     # download artist images
     gphotos.download_album(
         "collection artists web",
-        "./web/data/imgs/artists/",
+        os.path.join(WEB_BASE_PATH, ARTIST_IMG_PATH),
         500,
         500,
+    )
+
+    gdrive = GoogleDrive(
+        "./secrets/google_photos_credentials.json", "./secrets/drive_api_storage.json"
+    )
+    # download videos
+    gdrive.download_all_files_in_folder(
+        GDRIVE_360_VID_FOLDER, os.path.join(WEB_BASE_PATH, WORK_VID_PATH)
+    )
+    # download video thumbnails
+    gdrive.download_all_files_in_folder(
+        GDRIVE_360_VID_THUMB_FOLDER, os.path.join(WEB_BASE_PATH, WORK_VID_THUMB_PATH)
     )
 
 
@@ -167,7 +219,7 @@ def main():
     get_photos()
 
     logging.info("Adding photo data")
-    add_image_names_to_data(data)
+    add_media_info_to_data(data)
 
     logging.info("creating json data")
     create_json_data(
@@ -176,7 +228,7 @@ def main():
     )
 
     logging.info("uploading files")
-    upload_to_server()
+    # upload_to_server()
 
 
 if __name__ == "__main__":
