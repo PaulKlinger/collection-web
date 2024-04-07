@@ -150,6 +150,7 @@ footer :visited {
   border-radius: 10px;
   margin: 10px;
   height: fit-content;
+  min-height: calc(min(350px, 100vw - 40px));
 }
 
 .entry_thumb_bar_entry {
