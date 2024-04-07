@@ -100,6 +100,7 @@ setup_360_vid = (vid_elem) => {
         vid.start_cur_time = vid.currentTime;
       }
       e.preventDefault();
+      vid.parentElement.querySelector(".swipe_hint").classList.add("hide");
     },
     true,
   );
@@ -114,6 +115,7 @@ setup_360_vid = (vid_elem) => {
           vid.pause();
           vid.start_cur_time = vid.currentTime;
           vid.start_x = e.offsetX;
+          vid.parentElement.querySelector(".swipe_hint").classList.add("hide");
           return;
         }
         if (!(vid.duration > 0)) {
@@ -173,6 +175,7 @@ create_work_elem = (work, artist) => {
       <img src="${work.media[0].thumb_path}" class="entry_main_img entry_main">
       <div class="video_container entry_main hide">
           <video src="" loop autoplay muted></video>
+          <span class="swipe_hint hide"></span>
       </div>
       <div class="entry_thumbnails_bar hide only_full">
         ${work_thumbnails_html}
@@ -199,7 +202,11 @@ create_work_elem = (work, artist) => {
         work_elem.querySelector(".entry_main_img").classList.add("hide");
         setup_360_vid(work_elem.querySelector("video"));
         // need to do querySelector again, because setup_360_vid replaces the element
-        work_elem.querySelector("video").src = img.full_path;
+        const vid = work_elem.querySelector("video");
+        vid.src = img.full_path;
+        vid.addEventListener("loadeddata", () => {
+          work_elem.querySelector(".swipe_hint").classList.remove("hide");
+        });
       } else {
         work_elem.querySelector(".entry_main_img").classList.remove("hide");
         work_elem.querySelector(".video_container").classList.add("hide");
