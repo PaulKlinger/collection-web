@@ -228,7 +228,7 @@ def main():
     )
 
     logging.info("uploading files")
-    # upload_to_server()
+    upload_to_server()
 
 
 if __name__ == "__main__":
