@@ -20,6 +20,7 @@ jobs:
           python -m data_update
         env:
           GDRIVE_SECRET: ${{ secrets.GDRIVE_SECRET }}
+          GDRIVE_VIDEOS_SECRET: ${{ secrets.GDRIVE_VIDEOS_SECRET }}
           GPHOTOS_SECRET: ${{ secrets.GPHOTOS_SECRET }}
           GPHOTOS_SECRET_STORAGE: ${{ secrets.GPHOTOS_SECRET_STORAGE }}
           FTP_SECRET: ${{ secrets.FTP_SECRET }}
