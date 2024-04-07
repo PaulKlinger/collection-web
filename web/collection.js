@@ -197,6 +197,7 @@ create_work_elem = (work, artist) => {
     work_elem.querySelector(
       `#work_${work.work_id}_thumb_bar_img_${i}`,
     ).onclick = () => {
+      work_elem.querySelector(".swipe_hint").classList.add("hide");
       if (img.type === "vid") {
         work_elem.querySelector(".video_container").classList.remove("hide");
         work_elem.querySelector(".entry_main_img").classList.add("hide");
@@ -204,7 +205,7 @@ create_work_elem = (work, artist) => {
         // need to do querySelector again, because setup_360_vid replaces the element
         const vid = work_elem.querySelector("video");
         vid.src = img.full_path;
-        vid.addEventListener("play", () => {
+        vid.play().then(() => {
           work_elem.querySelector(".swipe_hint").classList.remove("hide");
         });
       } else {
