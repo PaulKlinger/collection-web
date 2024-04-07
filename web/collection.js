@@ -122,7 +122,7 @@ setup_360_vid = (vid_elem) => {
         // fraction of video element width that the pointer has moved since start of motion
         const fraction_moved = (e.offsetX - vid.start_x) / vid.offsetWidth;
         const new_time =
-          (vid.start_cur_time - vid.duration * fraction_moved + vid.duration) %
+          (vid.start_cur_time + vid.duration * fraction_moved + vid.duration) %
           vid.duration;
         vid.currentTime = new_time;
         vid.last_updated = Date.now();
