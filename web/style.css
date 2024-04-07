@@ -125,6 +125,10 @@ footer :visited {
   min-height: 400px;
 }
 
+.entry_full.artist {
+  min-height: 300px;
+}
+
 .close {
   font-size: 25pt;
   font-weight: 800;
@@ -230,7 +234,9 @@ footer :visited {
 
 .entry_full .artist_non_work {
   display: flex;
+  width: 100%;
   margin: 10px;
+  margin-bottom: 0;
 }
 
 .artist.entry_full .artist_non_work .entry_main {
