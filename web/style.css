@@ -139,7 +139,7 @@ footer :visited {
   cursor: pointer;
 }
 
-.entry_full .entry_main {
+.entry_full > .entry_main {
   position: relative;
   z-index: 6;
   width: 100%;
@@ -150,7 +150,7 @@ footer :visited {
   border-radius: 10px;
   margin: 10px;
   height: fit-content;
-  min-height: calc(min(350px, 100vw - 40px));
+  min-height: calc(min(350px, 100vw - 80px));
 }
 
 .entry_thumb_bar_entry {
