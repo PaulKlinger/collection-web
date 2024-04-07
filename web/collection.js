@@ -204,7 +204,7 @@ create_work_elem = (work, artist) => {
         // need to do querySelector again, because setup_360_vid replaces the element
         const vid = work_elem.querySelector("video");
         vid.src = img.full_path;
-        vid.addEventListener("loadeddata", () => {
+        vid.addEventListener("play", () => {
           work_elem.querySelector(".swipe_hint").classList.remove("hide");
         });
       } else {
