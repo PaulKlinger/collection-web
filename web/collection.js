@@ -24,20 +24,24 @@ setup_page = (page, work, artist) => {
   if (artist !== null) {
     const elem = document.getElementById(`artist_${artist}`);
     elem.querySelector(".entry_main_img").onclick();
-    elem.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-      inline: "center",
-    });
+    setTimeout(() => {
+      elem.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+        inline: "center",
+      });
+    }, 250);
   }
   if (work !== null) {
     const elem = document.getElementById(`work_${work}`);
     elem.querySelector(".entry_main_img").onclick();
-    elem.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-      inline: "center",
-    });
+    setTimeout(() => {
+      elem.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+        inline: "center",
+      });
+    }, 250);
   }
 };
 
