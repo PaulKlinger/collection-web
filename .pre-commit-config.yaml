@@ -48,6 +48,6 @@ repos:
       - id: mypy
         name: mypy
         description: Typecheck python
-        entry: "python -m mypy ."
+        entry: "poetry run python -m mypy ."
         pass_filenames: false
         language: system
