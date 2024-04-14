@@ -34,6 +34,6 @@ jobs:
           target-directory: ceramics
           destination-github-username: "PaulKlinger"
           destination-repository-name: "paulklinger.github.io"
-          user-email: klinger.paul@gmail.com
+          user-email: klinger.paul+automation@gmail.com
           commit-message: update ceramics
           target-branch: master
