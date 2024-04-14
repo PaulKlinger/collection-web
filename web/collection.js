@@ -10,12 +10,12 @@ window.onload = () => {
     });
 };
 
-setup_page_from_url = () => {
+const setup_page_from_url = () => {
   const params = new URLSearchParams(window.location.search);
   setup_page(params.get("page"), params.get("work"), params.get("artist"));
 };
 
-setup_page = (page, work, artist) => {
+const setup_page = (page, work, artist) => {
   if (page === "artists") {
     populate_artists();
   } else {
@@ -45,12 +45,12 @@ setup_page = (page, work, artist) => {
   }
 };
 
-elem_from_string = (s) => {
+const elem_from_string = (s) => {
   const parser = new DOMParser();
   return parser.parseFromString(s, "text/html").body.childNodes[0];
 };
 
-set_params = (page, work, artist) => {
+const set_params = (page, work, artist) => {
   const baseurl = window.location.href.split("?")[0];
   const params = new URLSearchParams(window.location.search);
   if (page === "works") {
@@ -77,19 +77,19 @@ set_params = (page, work, artist) => {
   }
 };
 
-setup_buttons = () => {
-  document.querySelector("#works_select").onclick = () => {
+const setup_buttons = () => {
+  document.getElementById("works_select").onclick = () => {
     populate_works();
     set_params("works", null, null);
   };
 
-  document.querySelector("#artists_select").onclick = () => {
+  document.getElementById("artists_select").onclick = () => {
     populate_artists();
     set_params("artists", null, null);
   };
 };
 
-setup_360_vid = (vid_elem) => {
+const setup_360_vid = (vid_elem) => {
   // clone node to remove any potentially still active event listeners
   const vid = vid_elem.cloneNode(true);
   vid_elem.replaceWith(vid);
@@ -139,7 +139,7 @@ setup_360_vid = (vid_elem) => {
   );
 };
 
-create_work_elem = (work, artist) => {
+const create_work_elem = (work, artist) => {
   let work_thumbnails_html = "";
 
   // create thumbnail imgs
@@ -189,7 +189,7 @@ create_work_elem = (work, artist) => {
   );
 
   // add click handler for artist (switch to artist page and expand matching)
-  open_artist = () => {
+  const open_artist = () => {
     set_params("artists", null, artist.artist_id);
     setup_page("artists", null, artist.artist_id);
   };
@@ -252,7 +252,7 @@ create_work_elem = (work, artist) => {
   return work_elem;
 };
 
-populate_works = () => {
+const populate_works = () => {
   const works_elem = document.getElementById("main_list");
   works_elem.innerHTML = "";
   for (const work of Object.values(data.works)) {
@@ -260,7 +260,7 @@ populate_works = () => {
   }
 };
 
-create_artist_elem = (artist, works) => {
+const create_artist_elem = (artist, works) => {
   // create country string, depending on whether artist lives in
   // their country of birth
   let artist_country_str;
@@ -271,7 +271,7 @@ create_artist_elem = (artist, works) => {
   }
 
   // create links
-  artist_links = "";
+  let artist_links = "";
   if (artist.website !== "") {
     artist_links += `<p class="artist_link"><a href="${artist.website}">website</a></p>`;
   }
@@ -334,7 +334,7 @@ create_artist_elem = (artist, works) => {
   return artist_elem;
 };
 
-populate_artists = () => {
+const populate_artists = () => {
   const artists_elem = document.getElementById("main_list");
   artists_elem.innerHTML = "";
   for (const [artist_id, artist] of Object.entries(data.artists)) {
