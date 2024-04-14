@@ -6,9 +6,9 @@ from typing import Any
 import pygsheets
 import pysftp
 
-from data_update.utils import GoogleDrive
-from data_update.utils import GooglePhotos
-from data_update.utils import put_r_portable
+from .utils import GoogleDrive
+from .utils import GooglePhotos
+from .utils import put_r_portable
 
 SECRETS = {
     "GDRIVE_SECRET": "./secrets/gdocs_service.json",
@@ -31,7 +31,7 @@ GDRIVE_360_VID_FOLDER = "1dkYiFVlsWoRUVoacKhSUs7mDn7F2-gpf"
 GDRIVE_360_VID_THUMB_FOLDER = "1lmPF0VXHsV_UKPV1tchHIGyJI3lL_kui"
 
 
-def write_secrets_to_file():
+def write_secrets_to_file() -> None:
     for secret_env, secret_path in SECRETS.items():
         os.makedirs(os.path.dirname(secret_path), exist_ok=True)
         if secret_env in os.environ:
@@ -140,7 +140,7 @@ def add_media_info_to_data(data: dict[str, Any]) -> None:
         work["media"].sort(key=lambda x: x["media_index"])
 
 
-def get_photos() -> set[str]:
+def get_photos() -> None:
     gphotos = GooglePhotos(
         "./secrets/google_photos_credentials.json", "./secrets/photos_api_storage.json"
     )
@@ -189,7 +189,7 @@ def create_json_data(
         json.dump(data, f)
 
 
-def upload_to_server():
+def upload_to_server() -> None:
     with open("./secrets/ftp_secrets.json") as f:
         ftp_secrets = json.load(f)
 
@@ -203,12 +203,11 @@ def upload_to_server():
         port=ftp_secrets["NAMECHEAP_PORT"],
         cnopts=cnopts,
     ) as sftp:
-
         with sftp.cd("public_html"):
             put_r_portable(sftp, "web", "ceramics")
 
 
-def main():
+def main() -> None:
     logging.info("writing secrets to files")
     write_secrets_to_file()
 

@@ -43,3 +43,11 @@ repos:
     hooks:
       - id: flake8
         args: ["--max-line-length", "99"]
+  - repo: local
+    hooks:
+      - id: mypy
+        name: mypy
+        description: Typecheck python
+        entry: "python -m mypy ."
+        pass_filenames: false
+        language: system
