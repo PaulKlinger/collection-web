@@ -17,7 +17,7 @@ jobs:
           poetry-version: 1.8.2
       - name: Install dependencies
         run: |
-          poetry install
+          poetry install --without dev
       - name: Run Update
         run: |
           poetry run python -m data_update
