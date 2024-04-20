@@ -242,6 +242,7 @@ footer :visited {
 
 .artist.entry_full .artist_non_work .entry_main {
   width: 50%;
+  height: fit-content;
   border-radius: 10px;
 }
 
