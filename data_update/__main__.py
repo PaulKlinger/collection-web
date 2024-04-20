@@ -47,42 +47,26 @@ def get_tabular_data() -> dict[str, Any]:
         "1Vmr4Eqm3lLJK9b4B1KGpfWJXNCfodEkRtT9pdRNCGgA/edit?usp=drive_link"
     )
 
-    df = collection_sheet.sheet1.get_as_df()
+    works = collection_sheet.worksheet_by_title("works").get_as_df()
+    artists = collection_sheet.worksheet_by_title("artists").get_as_df()
 
-    df = df[df["include in web"] == "y"].copy()
+    works = works[works["include in web"] == "y"].copy()
 
-    df["artist_id"] = df["artist"].str.replace(" ", "_").str.lower()
-
-    artists = (
-        df[
-            [
-                "artist_id",
-                "artist",
-                "artist gender",
-                "artist residence",
-                "artist origin",
-                "artist_website",
-                "artist_instagram",
-            ]
+    artists = artists[
+        [
+            "artist_id",
+            "name",
+            "gender",
+            "residence",
+            "origin",
+            "website",
+            "instagram",
         ]
-        .drop_duplicates()
-        .rename(
-            columns={
-                "artist": "name",
-                "artist gender": "gender",
-                "artist residence": "residence",
-                "artist origin": "origin",
-                "artist_website": "website",
-                "artist_instagram": "instagram",
-            }
-        )
-    )
-
-    assert artists["artist_id"].is_unique
-
-    works = df[
-        ["id", "artist_id", "acquired", "artist", "title", "year", "bought where"]
     ]
+
+    artists = artists[artists["artist_id"].isin(works["artist_id"])]
+
+    works = works[["id", "artist_id", "acquired", "title", "year", "bought where"]]
 
     return {
         "artists": artists.set_index("artist_id", drop=False).to_dict(orient="index"),
@@ -140,7 +124,7 @@ def add_media_info_to_data(data: dict[str, Any]) -> None:
         work["media"].sort(key=lambda x: x["media_index"])
 
 
-def get_photos() -> None:
+def download_media() -> None:
     gphotos = GooglePhotos(
         "./secrets/google_photos_credentials.json", "./secrets/photos_api_storage.json"
     )
@@ -214,19 +198,19 @@ def main() -> None:
     logging.info("getting data from gsheets & preprocessing")
     data = get_tabular_data()
 
-    logging.info("checking for new photos")
-    get_photos()
-
     logging.info("Adding photo data")
     add_media_info_to_data(data)
 
-    logging.info("creating json data")
+    logging.info("Creating json data")
     create_json_data(
         data,
         output_path="./web/data/data.json",
     )
 
-    logging.info("uploading files")
+    logging.info("Downloading media")
+    download_media()
+
+    logging.info("Uploading files")
     upload_to_server()
 
 
