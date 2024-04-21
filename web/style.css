@@ -252,7 +252,7 @@ footer :visited {
 }
 
 .artist.entry_full .artist_blurb {
-  font-size: 11pt;
+  font-size: 10.5pt;
   color: rgb(61, 61, 61);
   min-width: calc(min(100%, 250px));
   grid-row: 3 / 4;
