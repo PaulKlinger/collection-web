@@ -61,6 +61,7 @@ def get_tabular_data() -> dict[str, Any]:
             "origin",
             "website",
             "instagram",
+            "web_blurb",
         ]
     ]
 

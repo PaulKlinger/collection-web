@@ -282,17 +282,29 @@ const create_artist_elem = (artist, works) => {
     artist_links += `<p class="artist_link"><a href="${instagram_link}">instagram</a></p>`;
   }
 
+  let artist_blurb_div = "";
+  if (artist.web_blurb !== "") {
+    artist_blurb_div = `
+      <div class="artist_blurb hide only_full">
+        ${artist.web_blurb}
+      </div>
+    `;
+  }
+
   // create main element
   const artist_elem = elem_from_string(`
     <div class="entry_thumb artist" id="artist_${artist.artist_id}">
-      <div class="artist_non_work">
+      <div class="artist_non_work collapsed">
         <div class="close hide only_full">×</div>
-        <img src="${artist.img}" class="entry_main_img entry_main" />
+        <div class="artist_img_container">
+          <img src="${artist.img}" class="entry_main_img entry_main" />
+        </div>
         <div class="artist_details hide only_full">
           <p class="artist_name">${artist.name}</p>
           <p class="artist_country">${artist_country_str}</p>
           ${artist_links}
         </div>
+        ${artist_blurb_div}
       </div>
       <div class="artist_works_list hide only_full">
       </div>
@@ -306,6 +318,14 @@ const create_artist_elem = (artist, works) => {
       .append(create_work_elem(work, artist));
   }
 
+  if (artist.web_blurb !== "") {
+    artist_elem.querySelector(".artist_blurb").onclick = () => {
+      artist_elem
+        .querySelector(".artist_non_work")
+        .classList.remove("collapsed");
+    };
+  }
+
   // add click handler for close button
   artist_elem.querySelector(".close").onclick = () => {
     set_params("artists", null, null);
@@ -313,6 +333,8 @@ const create_artist_elem = (artist, works) => {
     artist_elem
       .querySelectorAll(".only_full")
       .forEach((n) => n.classList.add("hide"));
+
+    artist_elem.querySelector(".artist_non_work").classList.add("collapsed");
     for (const work_close_button of artist_elem.querySelectorAll(
       ".artist_works_list .close",
     )) {
