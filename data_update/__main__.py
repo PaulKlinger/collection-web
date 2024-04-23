@@ -193,7 +193,7 @@ def upload_to_server() -> None:
 
 
 def main() -> None:
-    update_media = os.getenv("INPUT_UPDATE_MEDIA", "true").lower() == "true"
+    update_media = os.getenv("UPDATE_MEDIA", "true").lower() == "true"
 
     logging.info("writing secrets to files")
     write_secrets_to_file()
