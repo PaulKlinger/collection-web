@@ -34,7 +34,7 @@ jobs:
           FTP_SECRET: ${{ secrets.FTP_SECRET }}
       - name: push to github pages
         id: push_directory
-        uses: cpina/github-action-push-to-another-repository@v1.7.2
+        uses: PaulKlinger/github-action-push-to-another-repository@54421fde4f1675bdd43f562435267207398f4394
         env:
           SSH_DEPLOY_KEY: ${{ secrets.GHPAGES_DEPLOY_KEY }}
         with:
