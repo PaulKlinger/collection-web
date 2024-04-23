@@ -193,6 +193,8 @@ def upload_to_server() -> None:
 
 
 def main() -> None:
+    update_media = os.getenv("INPUT_UPDATE_MEDIA", "true").lower() == "true"
+
     logging.info("writing secrets to files")
     write_secrets_to_file()
 
@@ -208,8 +210,9 @@ def main() -> None:
         output_path="./web/data/data.json",
     )
 
-    logging.info("Downloading media")
-    download_media()
+    if update_media:
+        logging.info("Downloading media")
+        download_media()
 
     logging.info("Uploading files")
     upload_to_server()

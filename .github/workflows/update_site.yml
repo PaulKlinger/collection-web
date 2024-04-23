@@ -1,6 +1,11 @@
 name: Update Site
 on:
   workflow_dispatch:
+    inputs:
+      update_media:
+        description: "Pull images/videos"
+        required: true
+        default: "true"
 
 jobs:
   generate:
