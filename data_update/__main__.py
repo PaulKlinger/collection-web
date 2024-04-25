@@ -56,6 +56,7 @@ def get_tabular_data() -> dict[str, Any]:
         [
             "artist_id",
             "name",
+            "orig_name",
             "gender",
             "residence",
             "origin",

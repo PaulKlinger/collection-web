@@ -301,6 +301,10 @@ footer :visited {
   font-size: 14pt;
 }
 
+.name_part {
+  white-space: nowrap;
+}
+
 .artist_works_list {
   max-width: 100%;
   padding: 10px;

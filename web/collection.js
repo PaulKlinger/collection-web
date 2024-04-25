@@ -290,7 +290,16 @@ const create_artist_elem = (artist, works) => {
       </div>
     `;
   }
-
+  let artist_name_str = artist.name;
+  if (artist.orig_name) {
+    const artist_names_raw = `${artist.name} | ${artist.orig_name}`;
+    artist_name_str = "";
+    // only allow linebreaks between space-separated parts
+    // (otherwise for asian languages line breaks are added in the middle)
+    for (const name_part of artist_names_raw.split(" ")) {
+      artist_name_str += `<span class="name_part">${name_part}</span> `;
+    }
+  }
   // create main element
   const artist_elem = elem_from_string(`
     <div class="entry_thumb artist" id="artist_${artist.artist_id}">
@@ -300,7 +309,7 @@ const create_artist_elem = (artist, works) => {
           <img src="${artist.img}" class="entry_main_img entry_main" />
         </div>
         <div class="artist_details hide only_full">
-          <p class="artist_name">${artist.name}</p>
+          <p class="artist_name">${artist_name_str}</p>
           <p class="artist_country">${artist_country_str}</p>
           ${artist_links}
         </div>
