@@ -265,7 +265,7 @@ const create_artist_elem = (artist, works) => {
   // their country of birth
   let artist_country_str;
   if (artist.residence !== artist.origin) {
-    artist_country_str = `${artist.origin} | ${artist.residence}`;
+    artist_country_str = `${artist.residence} | ${artist.origin}`;
   } else {
     artist_country_str = artist.origin;
   }
