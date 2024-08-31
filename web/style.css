@@ -149,9 +149,7 @@ footer :visited {
     height 0.2s;
   border-radius: 10px;
   margin: 10px;
-  height: fit-content;
   min-height: calc(min(350px, 100vw - 80px));
-  object-fit: contain;
 }
 
 .entry_thumb_bar_entry {
@@ -247,7 +245,6 @@ footer :visited {
 
 .artist.entry_full .artist_non_work .entry_main {
   width: 100%;
-  height: fit-content;
   border-radius: 10px;
 }
 .artist.entry_full .artist_img_container {
