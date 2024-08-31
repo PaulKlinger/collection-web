@@ -178,7 +178,7 @@ const create_work_elem = (work, artist) => {
       <span class="loader only_full hide"></span>
       <img src="${work.media[0].thumb_path}" class="entry_main_img entry_main">
       <div class="video_container entry_main hide">
-          <video src="" loop autoplay muted></video>
+          <video src="" loop autoplay muted playsinline></video>
           <span class="swipe_hint hide"></span>
       </div>
       <div class="entry_thumbnails_bar hide only_full">
