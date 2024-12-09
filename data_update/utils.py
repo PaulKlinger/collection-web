@@ -34,8 +34,15 @@ class GooglePhotos:
 
     def get_album_id(self, album_title: str) -> str:
         albums = self.photos.albums()
-        albums_meta = albums.list().execute()["albums"]
-        return next(a for a in albums_meta if a["title"] == album_title)["id"]
+        all_albums = []
+        page_token = None
+        while True:
+            resp = albums.list(pageToken=page_token).execute()
+            all_albums.extend(resp["albums"])
+            if "nextPageToken" not in resp:
+                break
+            page_token = resp["nextPageToken"]
+        return next(a for a in all_albums if a["title"] == album_title)["id"]
 
     def get_album_contents(
         self, album_id: str | None = None, album_title: str | None = None
