@@ -18,6 +18,93 @@ body {
 * {
   box-sizing: border-box;
 }
+#greet_container {
+  max-width: 600px;
+  width: auto;
+  margin-left: auto;
+  margin-right: auto;
+}
+#greet {
+  max-width: 600px;
+  overflow: hidden;
+  padding-top: 10px;
+
+  display: grid;
+  grid-template-columns: 80px auto;
+  margin: 10px;
+  margin-bottom: 0;
+
+  font-size: 10.5pt;
+  color: rgb(61, 61, 61);
+}
+
+#me_img {
+  max-height: 80px;
+  max-width: 80px;
+  border-radius: 10px;
+  grid-column: 1 / 2;
+  grid-row: 1 / 3;
+  overflow: hidden;
+  min-height: 0; /* NEW */
+  min-width: 0;
+}
+
+#welcome {
+  font-size: 11.5pt;
+  padding-left: 10px;
+  grid-column: 2 / 3;
+  grid-row: 1 / 2;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+@media (width > 750px) {
+  #welcome {
+    font-size: 13.5pt;
+  }
+}
+
+#intro {
+  overflow: hidden;
+  padding: 10px;
+  padding-top: 0px;
+  position: relative;
+  grid-column: 2 / 3;
+  grid-row: 2 / 2;
+  min-height: 0;
+  min-width: 0;
+  color: rgb(59, 59, 59);
+}
+
+#intro :link,
+#intro :visited {
+  color: rgb(59, 59, 59);
+}
+
+#greet.collapsed {
+  max-height: 90px;
+  cursor: pointer;
+}
+
+#greet:not(.collapsed) #intro {
+  grid-column: 1 / 3;
+  grid-row: 3 / 3;
+}
+
+#greet.collapsed #intro {
+  max-height: min(90px, 50vw);
+}
+
+#greet.collapsed #intro:after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -0px;
+  right: -0px;
+  box-shadow: inset 0px -85px 23px -27px rgb(250, 250, 250);
+}
 
 #title {
   font-size: 30pt;
@@ -86,7 +173,7 @@ footer :visited {
 }
 
 #page_select {
-  font-size: 14pt;
+  font-size: 15pt;
   color: rgb(59, 59, 59);
   text-align: center;
   border-bottom: 1px solid #eee;

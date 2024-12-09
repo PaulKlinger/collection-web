@@ -78,6 +78,9 @@ const set_params = (page, work, artist) => {
 };
 
 const setup_buttons = () => {
+  document.getElementById("greet").onclick = () => {
+    document.getElementById("greet").classList.toggle("collapsed");
+  };
   document.getElementById("works_select").onclick = () => {
     populate_works();
     set_params("works", null, null);
