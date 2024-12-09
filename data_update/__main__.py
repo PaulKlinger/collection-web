@@ -68,7 +68,22 @@ def get_tabular_data() -> dict[str, Any]:
 
     artists = artists[artists["artist_id"].isin(works["artist_id"])]
 
-    works = works[["id", "artist_id", "acquired", "title", "year", "bought where"]]
+    works = works[
+        [
+            "id",
+            "artist_id",
+            "acquired",
+            "title",
+            "year",
+            "bought where",
+            "weight [g]",
+            "weight suffix",
+            "w [cm]",
+            "d [cm]",
+            "h [cm]",
+            "dimensions suffix",
+        ]
+    ]
 
     return {
         "artists": artists.set_index("artist_id", drop=False).to_dict(orient="index"),

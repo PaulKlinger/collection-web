@@ -294,7 +294,8 @@ footer :visited {
   margin-bottom: 0;
   margin-top: 5px;
 }
-.work_other_fieldname {
+.work_other_fieldname,
+.work_measurements {
   color: rgb(150, 150, 150);
 }
 
