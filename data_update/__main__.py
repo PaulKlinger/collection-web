@@ -26,6 +26,7 @@ WORK_THUMBNAILS_PATH = "data/media/works/thumbnails/"
 ARTIST_IMG_PATH = "data/media/artists/"
 WORK_VID_PATH = "data/media/works/vids/"
 WORK_VID_THUMB_PATH = "data/media/works/vidthumbs/"
+OTHER_MEDIA_PATH = "data/media/"
 
 GDRIVE_360_VID_FOLDER = "1dkYiFVlsWoRUVoacKhSUs7mDn7F2-gpf"
 GDRIVE_360_VID_THUMB_FOLDER = "1lmPF0VXHsV_UKPV1tchHIGyJI3lL_kui"
@@ -158,6 +159,13 @@ def download_media() -> None:
         os.path.join(WEB_BASE_PATH, WORK_IMGS_PATH),
         1500,
         1500,
+    )
+    # download other images
+    gphotos.download_album(
+        "collection web other",
+        os.path.join(WEB_BASE_PATH, OTHER_MEDIA_PATH),
+        250,
+        250,
     )
 
     # download artist images
