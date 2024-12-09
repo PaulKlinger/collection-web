@@ -176,7 +176,10 @@ const create_work_elem = (work, artist) => {
             <span class="work_other_fieldname">from:</span>
             ${work["bought where"]}
             <br />
-            <span class="work_measurements">${work["weight [g]"]}g${work["weight suffix"]}, ${work["w [cm]"]}×${work["d [cm]"]}×${work["h [cm]"]}cm ${work["dimensions suffix"]}</span>
+            <span class="work_measurements">
+              ${work["w [cm]"]}×${work["d [cm]"]}×${work["h [cm]"]}cm${work["dimensions suffix"]},
+              ${work["weight [g]"]}g${work["weight suffix"]}
+            </span>
           </p>
         </div>
       </div>
