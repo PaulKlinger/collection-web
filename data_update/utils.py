@@ -112,13 +112,15 @@ class GoogleDrive:
         )
 
     def get_folder_contents(self, folder_id: str) -> Iterator[dict[str, Any]]:
-        response = self.drive.files().list(q=f"'{folder_id}' in parents").execute()
+        files = self.drive.files()
+        query = f"'{folder_id}' in parents"
+        response = files.list(q=query).execute()
         yield from response["files"]
         while "nextPageToken" in response:
-            response = (
-                self.drive.files().list(pageToken=response["nextPageToken"]).execute()
-            )
-            yield from response["mediaItems"]
+            response = files.list(
+                q=query, pageToken=response["nextPageToken"]
+            ).execute()
+            yield from response["files"]
 
     def download_all_files_in_folder(self, folder_id: str, target_dir: str) -> None:
         os.makedirs(target_dir, exist_ok=True)
