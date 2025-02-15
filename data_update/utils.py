@@ -34,15 +34,18 @@ class GooglePhotos:
 
     def get_album_id(self, album_title: str) -> str:
         albums = self.photos.albums()
-        all_albums = []
         page_token = None
         while True:
             resp = albums.list(pageToken=page_token).execute()
-            all_albums.extend(resp["albums"])
+            if "albums" in resp:
+                for a in resp["albums"]:
+                    if a["title"] == album_title:
+                        return a["id"]
             if "nextPageToken" not in resp:
                 break
             page_token = resp["nextPageToken"]
-        return next(a for a in all_albums if a["title"] == album_title)["id"]
+
+        raise FileNotFoundError(f"Did not find album id for title '{album_title}'")
 
     def get_album_contents(
         self, album_id: str | None = None, album_title: str | None = None
