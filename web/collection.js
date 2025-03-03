@@ -165,7 +165,7 @@ const create_work_elem = (work, artist) => {
         </div>
         <div class="work_details">
           <p class="work_head">
-            <span class="work_title">${work.title},</span>
+            <span class="work_title">${work.title}${work.year ? "," : ""}</span>
             <span class="work_year">${work.year}</span>
           </p>
           <p class="work_artist_name">${artist.name}</p>
@@ -177,8 +177,12 @@ const create_work_elem = (work, artist) => {
             ${work["bought where"]}
             <br />
             <span class="work_measurements">
-              ${work["w [cm]"]}×${work["d [cm]"]}×${work["h [cm]"]}cm${work["dimensions suffix"]},
-              ${work["weight [g]"]}g${work["weight suffix"]}
+              ${work["w [cm]"]}×${work["d [cm]"]}×${work["h [cm]"]}cm${
+                work["dimensions suffix"] ? "&nbsp;" : ""
+              }${work["dimensions suffix"]},
+              ${work["weight [g]"]}g${work["weight suffix"] ? "&nbsp;" : ""}${
+                work["weight suffix"]
+              }
             </span>
           </p>
         </div>
