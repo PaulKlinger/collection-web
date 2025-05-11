@@ -1,98 +1,14 @@
 import os
-import shutil
 from collections.abc import Callable
 from collections.abc import Iterator
 from typing import Any
 
 import pysftp
-import requests
 from googleapiclient import discovery
 from httplib2 import Http
 from oauth2client import client
 from oauth2client import file as oauth_file
 from oauth2client import tools
-
-
-class GooglePhotos:
-    def __init__(self, secret: str, secret_store: str):
-        self.SCOPE = "https://www.googleapis.com/auth/photoslibrary"
-        self.store = oauth_file.Storage(secret_store)
-        self.credentials = self.store.get()
-        if not self.credentials or self.credentials.invalid:
-            self.flow = client.flow_from_clientsecrets(secret, self.SCOPE)
-            self.credentials = tools.run_flow(
-                self.flow,
-                self.store,
-                flags=tools.argparser.parse_args([]),  # type: ignore
-            )
-        self.photos = discovery.build(
-            "photoslibrary",
-            "v1",
-            http=self.credentials.authorize(Http()),
-            static_discovery=False,
-        )
-
-    def get_album_id(self, album_title: str) -> str:
-        albums = self.photos.albums()
-        page_token = None
-        while True:
-            resp = albums.list(pageToken=page_token).execute()
-            if "albums" in resp:
-                for a in resp["albums"]:
-                    if a["title"] == album_title:
-                        return a["id"]
-            if "nextPageToken" not in resp:
-                break
-            page_token = resp["nextPageToken"]
-
-        raise FileNotFoundError(f"Did not find album id for title '{album_title}'")
-
-    def get_album_contents(
-        self, album_id: str | None = None, album_title: str | None = None
-    ) -> Iterator[dict[str, Any]]:
-        if album_id is None:
-            assert album_title is not None
-            album_id = self.get_album_id(album_title)
-
-        response = self.photos.mediaItems().search(body={"albumId": album_id}).execute()
-        yield from response["mediaItems"]
-        while "nextPageToken" in response:
-            response = (
-                self.photos.mediaItems()
-                .search(
-                    body={"albumId": album_id, "pageToken": response["nextPageToken"]}
-                )
-                .execute()
-            )
-            yield from response["mediaItems"]
-
-    @staticmethod
-    def download_item(
-        base_url: str, target_width: int, target_height: int, output_path: str
-    ) -> None:
-        url = f"{base_url}=w{target_width}-h{target_height}"
-        response = requests.get(url, stream=True)
-
-        with open(output_path, "wb") as out_file:
-            shutil.copyfileobj(response.raw, out_file)
-
-    def download_album(
-        self,
-        album_title: str,
-        output_folder: str,
-        target_width: int,
-        target_height: int,
-        exclude: set[str] | None = None,
-    ) -> None:
-        os.makedirs(output_folder, exist_ok=True)
-        for item in self.get_album_contents(album_title=album_title):
-            if exclude is not None and item["filename"] in exclude:
-                continue
-            print(".", end="")
-            output_path = os.path.join(output_folder, item["filename"])
-            self.download_item(
-                item["baseUrl"], target_width, target_height, output_path
-            )
 
 
 class GoogleDrive:
@@ -116,7 +32,7 @@ class GoogleDrive:
 
     def get_folder_contents(self, folder_id: str) -> Iterator[dict[str, Any]]:
         files = self.drive.files()
-        query = f"'{folder_id}' in parents"
+        query = f"'{folder_id}' in parents and trashed = false"
         response = files.list(q=query).execute()
         yield from response["files"]
         while "nextPageToken" in response:

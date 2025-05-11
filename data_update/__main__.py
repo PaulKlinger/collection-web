@@ -1,19 +1,18 @@
 import json
 import logging
 import os
+import subprocess
+import tempfile
 from typing import Any
 
 import pygsheets
 import pysftp
 
 from .utils import GoogleDrive
-from .utils import GooglePhotos
 from .utils import put_r_portable
 
 SECRETS = {
     "GDRIVE_SECRET": "./secrets/gdocs_service.json",
-    "GPHOTOS_SECRET": "./secrets/google_photos_credentials.json",
-    "GPHOTOS_SECRET_STORAGE": "./secrets/photos_api_storage.json",
     "GDRIVE_VIDEOS_SECRET": "./secrets/drive_api_storage.json",
     "FTP_SECRET": "./secrets/ftp_secrets.json",
 }
@@ -30,6 +29,10 @@ OTHER_MEDIA_PATH = "data/media/"
 
 GDRIVE_360_VID_FOLDER = "1dkYiFVlsWoRUVoacKhSUs7mDn7F2-gpf"
 GDRIVE_360_VID_THUMB_FOLDER = "1lmPF0VXHsV_UKPV1tchHIGyJI3lL_kui"
+
+GDRIVE_WORKS_FOLDER = "1AjS1gmkS6HIRZ7Kf0PwCDB1Fbo2G-MKg"
+GDRIVE_ARTISTS_FOLDER = "1eU55sTp7qE1rjGEhls7aADmMNoYeBfsP"
+GDRIVE_OTHER_MEDIA_FOLDER = "1IVAEar8sVEn_KJ7mQjZiLCsjDxD6uklo"
 
 
 def write_secrets_to_file() -> None:
@@ -93,36 +96,31 @@ def get_tabular_data() -> dict[str, Any]:
 
 
 def add_media_info_to_data(data: dict[str, Any]) -> None:
-    gphotos = GooglePhotos(
-        "./secrets/google_photos_credentials.json", "./secrets/photos_api_storage.json"
+    gdrive = GoogleDrive(
+        "./secrets/google_photos_credentials.json", "./secrets/drive_api_storage.json"
     )
     data["works"] = {k: v | {"media": []} for k, v in data["works"].items()}
 
-    for photo in gphotos.get_album_contents(album_title="collection web"):
-        media_type, work_id, media_index = photo["description"].split("_")
+    for file in gdrive.get_folder_contents(GDRIVE_WORKS_FOLDER):
+        name, ext = os.path.splitext(file["name"])
+        media_type, work_id, media_index = name.split("_")
         assert media_type == "img"
         data["works"][int(work_id)]["media"].append(
             {
                 "type": media_type,
-                "full_path": os.path.join(WORK_IMGS_PATH, photo["filename"]),
-                "thumb_path": os.path.join(WORK_THUMBNAILS_PATH, photo["filename"]),
+                "full_path": os.path.join(WORK_IMGS_PATH, file["name"]),
+                "thumb_path": os.path.join(WORK_THUMBNAILS_PATH, file["name"]),
                 "media_index": int(media_index),
             }
         )
         print(".", end="")
 
-    for photo in gphotos.get_album_contents(album_title="collection artists web"):
-        artist_id = photo["description"]
+    for file in gdrive.get_folder_contents(GDRIVE_ARTISTS_FOLDER):
+        artist_id, ext = os.path.splitext(file["name"])
         if artist_id not in data["artists"]:
             continue
-        data["artists"][artist_id]["img"] = os.path.join(
-            ARTIST_IMG_PATH, photo["filename"]
-        )
+        data["artists"][artist_id]["img"] = os.path.join(ARTIST_IMG_PATH, file["name"])
         print(".", end="")
-
-    gdrive = GoogleDrive(
-        "./secrets/google_photos_credentials.json", "./secrets/drive_api_storage.json"
-    )
 
     for file in gdrive.get_folder_contents(GDRIVE_360_VID_FOLDER):
         name, ext = os.path.splitext(file["name"])
@@ -142,39 +140,57 @@ def add_media_info_to_data(data: dict[str, Any]) -> None:
         work["media"].sort(key=lambda x: x["media_index"])
 
 
+def resize_imgs(
+    input_folder: str, output_folder: str, target_width: int, target_height: int
+) -> None:
+    # use imagemagick to resize images, supports jpg, png, and webp
+    os.makedirs(output_folder, exist_ok=True)
+    for file in os.listdir(input_folder):
+        subprocess.run(
+            f"magick {os.path.join(input_folder, file)} "
+            f"-resize {target_width}x{target_height}> "
+            f"{os.path.join(output_folder, file)}"
+        )
+        print(".", end="")
+
+
 def download_media() -> None:
-    gphotos = GooglePhotos(
-        "./secrets/google_photos_credentials.json", "./secrets/photos_api_storage.json"
+    gdrive = GoogleDrive(
+        "./secrets/google_photos_credentials.json", "./secrets/drive_api_storage.json"
     )
 
-    # download work thumbnails and full images
-    gphotos.download_album(
-        "collection web",
-        os.path.join(WEB_BASE_PATH, WORK_THUMBNAILS_PATH),
-        200,
-        200,
-    )
-    gphotos.download_album(
-        "collection web",
-        os.path.join(WEB_BASE_PATH, WORK_IMGS_PATH),
-        1500,
-        1500,
-    )
-    # download other images
-    gphotos.download_album(
-        "collection web other",
-        os.path.join(WEB_BASE_PATH, OTHER_MEDIA_PATH),
-        250,
-        250,
-    )
+    with tempfile.TemporaryDirectory() as tempdir:
+        gdrive.download_all_files_in_folder(GDRIVE_ARTISTS_FOLDER, tempdir)
+        resize_imgs(
+            tempdir,
+            os.path.join(WEB_BASE_PATH, ARTIST_IMG_PATH),
+            target_width=500,
+            target_height=500,
+        )
 
-    # download artist images
-    gphotos.download_album(
-        "collection artists web",
-        os.path.join(WEB_BASE_PATH, ARTIST_IMG_PATH),
-        500,
-        500,
-    )
+    with tempfile.TemporaryDirectory() as tempdir:
+        gdrive.download_all_files_in_folder(GDRIVE_OTHER_MEDIA_FOLDER, tempdir)
+        resize_imgs(
+            tempdir,
+            os.path.join(WEB_BASE_PATH, OTHER_MEDIA_PATH),
+            target_width=250,
+            target_height=250,
+        )
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        gdrive.download_all_files_in_folder(GDRIVE_WORKS_FOLDER, tempdir)
+        resize_imgs(
+            tempdir,
+            os.path.join(WEB_BASE_PATH, WORK_IMGS_PATH),
+            target_width=1500,
+            target_height=1500,
+        )
+        resize_imgs(
+            tempdir,
+            os.path.join(WEB_BASE_PATH, WORK_THUMBNAILS_PATH),
+            target_width=200,
+            target_height=200,
+        )
 
     gdrive = GoogleDrive(
         "./secrets/google_photos_credentials.json", "./secrets/drive_api_storage.json"
