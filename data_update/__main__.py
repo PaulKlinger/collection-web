@@ -151,7 +151,7 @@ def resize_imgs(
                 "magick",
                 os.path.join(input_folder, file),
                 "-resize",
-                "{target_width}x{target_height}>",
+                f"{target_width}x{target_height}>",
                 os.path.join(output_folder, file),
             ]
         )
