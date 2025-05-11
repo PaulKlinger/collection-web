@@ -147,9 +147,12 @@ def resize_imgs(
     os.makedirs(output_folder, exist_ok=True)
     for file in os.listdir(input_folder):
         subprocess.run(
-            f"magick {os.path.join(input_folder, file)} "
-            f"-resize {target_width}x{target_height}> "
-            f"{os.path.join(output_folder, file)}"
+            [
+                "magick",
+                os.path.join(input_folder, file),
+                f"-resize {target_width}x{target_height}>",
+                os.path.join(output_folder, file),
+            ]
         )
         print(".", end="")
 
