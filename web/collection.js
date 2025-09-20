@@ -92,8 +92,9 @@ const setup_buttons = () => {
   };
 };
 
-const setup_360_vid = (vid_elem) => {
+const setup_360_vid = (work_elem, work, vid_url) => {
   // clone node to remove any potentially still active event listeners
+  const vid_elem = work_elem.querySelector("video");
   const vid = vid_elem.cloneNode(true);
   vid_elem.replaceWith(vid);
 
@@ -140,7 +141,46 @@ const setup_360_vid = (vid_elem) => {
     },
     true,
   );
+
+  // preload the entire video. Otherwise seeking to absolute positions hangs in weird ways
+  work.video_preload_abort = new AbortController();
+  preloadVideo(vid_url, work.video_preload_abort).then((blobUrl) => {
+    if (blobUrl) {
+      // set the source to the preloaded data blob
+      vid.src = blobUrl;
+      vid.play().then(() => {
+        work_elem.querySelector(".swipe_hint").classList.remove("hide");
+      });
+    }
+  });
 };
+
+function abortVideoPreload(work) {
+  if (work.video_preload_abort !== undefined) {
+    work.video_preload_abort.abort();
+    work.video_preload_abort = undefined;
+  }
+}
+
+// Function to preload a video
+async function preloadVideo(videoUrl, abortController) {
+  try {
+    // Fetch the video file as a Blob
+    const response = await fetch(videoUrl, { signal: abortController.signal });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const videoBlob = await response.blob();
+
+    // Create a Blob URL for the video
+    const videoBlobUrl = URL.createObjectURL(videoBlob);
+
+    return videoBlobUrl;
+  } catch (error) {
+    console.error("Failed to preload video:", error);
+    return null;
+  }
+}
 
 const create_work_elem = (work, artist) => {
   let work_thumbnails_html = "";
@@ -213,17 +253,13 @@ const create_work_elem = (work, artist) => {
     work_elem.querySelector(
       `#work_${work.work_id}_thumb_bar_img_${i}`,
     ).onclick = () => {
+      abortVideoPreload(work);
       work_elem.querySelector(".swipe_hint").classList.add("hide");
       if (img.type === "vid") {
         work_elem.querySelector(".video_container").classList.remove("hide");
         work_elem.querySelector(".entry_main_img").classList.add("hide");
-        setup_360_vid(work_elem.querySelector("video"));
-        // need to do querySelector again, because setup_360_vid replaces the element
-        const vid = work_elem.querySelector("video");
-        vid.src = img.full_path;
-        vid.play().then(() => {
-          work_elem.querySelector(".swipe_hint").classList.remove("hide");
-        });
+
+        setup_360_vid(work_elem, work, img.full_path);
       } else {
         work_elem.querySelector(".entry_main_img").classList.remove("hide");
         work_elem.querySelector(".video_container").classList.add("hide");
