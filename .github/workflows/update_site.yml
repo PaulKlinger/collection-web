@@ -42,7 +42,7 @@ jobs:
           SSH_DEPLOY_KEY: ${{ secrets.GHPAGES_DEPLOY_KEY }}
         with:
           source-directory: web
-          target-directory: contents/ceramics
+          target-directory: content/ceramics
           destination-github-username: "PaulKlinger"
           destination-repository-name: "paulklinger.github.io"
           user-email: klinger.paul+automation@gmail.com
