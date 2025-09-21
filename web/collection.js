@@ -144,7 +144,11 @@ const setup_360_vid = (work_elem, work, vid_url) => {
 
   // preload the entire video. Otherwise seeking to absolute positions hangs in weird ways
   work.video_preload_abort = new AbortController();
-  preloadVideo(vid_url, work.video_preload_abort).then((blobUrl) => {
+  preloadVideo(
+    vid_url,
+    work.video_preload_abort,
+    work_elem.querySelector(".video_icon_progress"),
+  ).then((blobUrl) => {
     if (blobUrl) {
       // set the source to the preloaded data blob
       vid.src = blobUrl;
@@ -162,22 +166,34 @@ function abortVideoPreload(work) {
   }
 }
 
-// Function to preload a video
-async function preloadVideo(videoUrl, abortController) {
+async function preloadVideo(videoUrl, abortController, progressElem) {
   try {
     // Fetch the video file as a Blob
     const response = await fetch(videoUrl, { signal: abortController.signal });
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-    const videoBlob = await response.blob();
+    const content_length = response.headers.get("Content-Length");
+    const stream = response.body.getReader();
+    let bytes_so_far = 0;
+    const chunks = [];
+    for (;;) {
+      const { done, value } = await stream.read();
+      bytes_so_far += value ? value.length : 0;
+      const progress = done ? 100 : bytes_so_far / content_length;
+      progressElem.style.setProperty("--angle", `${progress * 360}deg`);
+      if (done) break;
+      chunks.push(value);
+    }
 
-    // Create a Blob URL for the video
+    const videoBlob = new Blob(chunks, { type: "video/mp4" });
+
+    // wrap it in a blob URL
     const videoBlobUrl = URL.createObjectURL(videoBlob);
 
     return videoBlobUrl;
   } catch (error) {
-    console.error("Failed to preload video:", error);
+    console.error(`Failed to preload video "${videoUrl}": ${error}`);
     return null;
   }
 }
@@ -188,7 +204,7 @@ const create_work_elem = (work, artist) => {
   // create thumbnail imgs
   for (const [i, img] of work.media.entries()) {
     work_thumbnails_html += `
-      <div id="work_${work.work_id}_thumb_bar_img_${i}" class="entry_thumb_bar_entry">
+      <div id="work_${work.id}_thumb_bar_img_${i}" class="entry_thumb_bar_entry">
         <img src="${img.thumb_path}" />
       </div>
     `;
@@ -228,6 +244,9 @@ const create_work_elem = (work, artist) => {
         </div>
       </div>
       <span class="loader only_full hide"></span>
+      <div class="video_icon_progress hide" id="video_icon_progress_${work.id}">
+          <img />
+      </div>
       <img src="${work.media[0].thumb_path}" class="entry_main_img entry_main">
       <div class="video_container entry_main hide">
           <video src="" loop autoplay muted playsinline></video>
@@ -248,26 +267,31 @@ const create_work_elem = (work, artist) => {
   work_elem.querySelector(".work_artist").onclick = open_artist;
   work_elem.querySelector(".work_artist_name").onclick = open_artist;
 
+  const vid_progress = work_elem.querySelector(".video_icon_progress");
+
   // add click handler for thumbnail images
   for (const [i, img] of work.media.entries()) {
-    work_elem.querySelector(
-      `#work_${work.work_id}_thumb_bar_img_${i}`,
-    ).onclick = () => {
-      abortVideoPreload(work);
-      work_elem.querySelector(".swipe_hint").classList.add("hide");
-      if (img.type === "vid") {
-        work_elem.querySelector(".video_container").classList.remove("hide");
-        work_elem.querySelector(".entry_main_img").classList.add("hide");
+    work_elem.querySelector(`#work_${work.id}_thumb_bar_img_${i}`).onclick =
+      () => {
+        abortVideoPreload(work);
+        work_elem.querySelector(".swipe_hint").classList.add("hide");
+        vid_progress.classList.add("hide");
+        if (img.type === "vid") {
+          work_elem.querySelector(".video_container").classList.remove("hide");
+          work_elem.querySelector(".entry_main_img").classList.add("hide");
 
-        setup_360_vid(work_elem, work, img.full_path);
-      } else {
-        work_elem.querySelector(".entry_main_img").classList.remove("hide");
-        work_elem.querySelector(".video_container").classList.add("hide");
-        work_elem
-          .querySelector(".entry_main_img")
-          .setAttribute("src", img.full_path);
-      }
-    };
+          vid_progress.querySelector("img").src = img.thumb_path;
+          vid_progress.classList.remove("hide");
+
+          setup_360_vid(work_elem, work, img.full_path);
+        } else {
+          work_elem.querySelector(".entry_main_img").classList.remove("hide");
+          work_elem.querySelector(".video_container").classList.add("hide");
+          work_elem
+            .querySelector(".entry_main_img")
+            .setAttribute("src", img.full_path);
+        }
+      };
   }
 
   // add click handler for close button

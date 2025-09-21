@@ -11,5 +11,3 @@ ffmpeg -i .\vid_16_1.mp4 -filter:v fps=fps=15 -lossless 0 -compression_level 4 -
 ```
 
 adjust quality (max 100) if artefacts are too noticable.
-
-Need to use a webserver that supports http byte range requests for testing (due to videos), python http.server doesn't work (videos randomly freeze).
