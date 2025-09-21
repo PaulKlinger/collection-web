@@ -172,7 +172,7 @@ function abortVideoPreload(work) {
 async function preloadVideo(videoUrl, abortController, progressElem) {
   try {
     // delay showing progress indicator to prevent flashes
-    let show_progress_at = Date.now() + 100;
+    let show_progress_at = Date.now() + 200;
 
     // Fetch the video file as a Blob
     const response = await fetch(videoUrl, { signal: abortController.signal });
