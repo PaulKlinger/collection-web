@@ -255,7 +255,9 @@ const create_work_elem = (work, artist) => {
         </div>
       </div>
       <span class="loader only_full hide"></span>
-      <div class="video_icon_progress hide" id="video_icon_progress_${work.id}">
+      <div class="video_icon_progress only_full hide" id="video_icon_progress_${
+        work.id
+      }">
           <img />
       </div>
       <img src="${work.media[0].thumb_path}" class="entry_main_img entry_main">
