@@ -325,6 +325,10 @@ footer :visited {
   display: none !important;
 }
 
+.invisible {
+  visibility: hidden !important;
+}
+
 .entry_full .artist_non_work {
   display: grid;
   grid-template-columns: 50% 50%;

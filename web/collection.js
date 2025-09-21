@@ -153,6 +153,9 @@ const setup_360_vid = (work_elem, work, vid_url) => {
       // set the source to the preloaded data blob
       vid.src = blobUrl;
       vid.play().then(() => {
+        work_elem
+          .querySelector(".video_container")
+          .classList.remove("invisible");
         work_elem.querySelector(".swipe_hint").classList.remove("hide");
       });
     }
@@ -276,6 +279,7 @@ const create_work_elem = (work, artist) => {
   work_elem.querySelector(".work_artist_name").onclick = open_artist;
 
   const vid_progress = work_elem.querySelector(".video_icon_progress");
+  const vid_container = work_elem.querySelector(".video_container");
 
   // add click handler for thumbnail images
   for (const [i, img] of work.media.entries()) {
@@ -284,20 +288,22 @@ const create_work_elem = (work, artist) => {
         abortVideoPreload(work);
         work_elem.querySelector(".swipe_hint").classList.add("hide");
         vid_progress.classList.add("hide");
+        vid_container.classList.add("invisible");
+
         if (img.type === "vid") {
           work_elem.querySelector(".entry_main_img").classList.add("hide");
+          vid_container.classList.remove("hide");
 
           // set current videos thumbnail in the loading icon
           vid_progress.querySelector("img").src = img.thumb_path;
 
           setup_360_vid(work_elem, work, img.full_path);
-          work_elem.querySelector(".video_container").classList.remove("hide");
         } else {
-          work_elem.querySelector(".video_container").classList.add("hide");
+          vid_container.classList.add("hide");
+          work_elem.querySelector(".entry_main_img").classList.remove("hide");
           work_elem
             .querySelector(".entry_main_img")
             .setAttribute("src", img.full_path);
-          work_elem.querySelector(".entry_main_img").classList.remove("hide");
         }
       };
   }
