@@ -168,6 +168,9 @@ function abortVideoPreload(work) {
 
 async function preloadVideo(videoUrl, abortController, progressElem) {
   try {
+    // delay showing progress indicator to prevent flashes
+    let show_progress_at = Date.now() + 100;
+
     // Fetch the video file as a Blob
     const response = await fetch(videoUrl, { signal: abortController.signal });
     if (!response.ok) {
@@ -182,6 +185,11 @@ async function preloadVideo(videoUrl, abortController, progressElem) {
       bytes_so_far += value ? value.length : 0;
       const progress = done ? 100 : bytes_so_far / content_length;
       progressElem.style.setProperty("--angle", `${progress * 360}deg`);
+      if (Date.now() > show_progress_at) {
+        progressElem.classList.remove("hide");
+        show_progress_at = Number.MAX_VALUE;
+      }
+
       if (done) break;
       chunks.push(value);
     }
@@ -277,19 +285,19 @@ const create_work_elem = (work, artist) => {
         work_elem.querySelector(".swipe_hint").classList.add("hide");
         vid_progress.classList.add("hide");
         if (img.type === "vid") {
-          work_elem.querySelector(".video_container").classList.remove("hide");
           work_elem.querySelector(".entry_main_img").classList.add("hide");
 
+          // set current videos thumbnail in the loading icon
           vid_progress.querySelector("img").src = img.thumb_path;
-          vid_progress.classList.remove("hide");
 
           setup_360_vid(work_elem, work, img.full_path);
+          work_elem.querySelector(".video_container").classList.remove("hide");
         } else {
-          work_elem.querySelector(".entry_main_img").classList.remove("hide");
           work_elem.querySelector(".video_container").classList.add("hide");
           work_elem
             .querySelector(".entry_main_img")
             .setAttribute("src", img.full_path);
+          work_elem.querySelector(".entry_main_img").classList.remove("hide");
         }
       };
   }
