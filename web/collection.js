@@ -186,7 +186,7 @@ async function preloadVideo(videoUrl, abortController, progressElem) {
     for (;;) {
       const { done, value } = await stream.read();
       bytes_so_far += value ? value.length : 0;
-      const progress = done ? 100 : bytes_so_far / content_length;
+      const progress = done ? 1 : bytes_so_far / content_length;
       progressElem.style.setProperty("--angle", `${progress * 360}deg`);
       if (Date.now() > show_progress_at) {
         progressElem.classList.remove("hide");
