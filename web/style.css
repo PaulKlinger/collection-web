@@ -241,6 +241,10 @@ footer :visited {
   min-height: calc(min(350px, 100vw - 80px));
 }
 
+.entry_main_img {
+  object-fit: contain;
+}
+
 .entry_thumb_bar_entry {
   margin: 2px;
 }
