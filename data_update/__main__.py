@@ -105,6 +105,8 @@ def add_media_info_to_data(data: dict[str, Any]) -> None:
         name, ext = os.path.splitext(file["name"])
         media_type, work_id, media_index = name.split("_")
         assert media_type == "img"
+        if int(work_id) not in data["works"]:
+            continue
         data["works"][int(work_id)]["media"].append(
             {
                 "type": media_type,
@@ -125,6 +127,8 @@ def add_media_info_to_data(data: dict[str, Any]) -> None:
     for file in gdrive.get_folder_contents(GDRIVE_360_VID_FOLDER):
         name, ext = os.path.splitext(file["name"])
         media_type, work_id, media_index = name.split("_")
+        if int(work_id) not in data["works"]:
+            continue
         assert media_type == "vid"
         thumbnail_name = file["name"].replace("vid", "vidthumb").replace("mp4", "webp")
         data["works"][int(work_id)]["media"].append(
