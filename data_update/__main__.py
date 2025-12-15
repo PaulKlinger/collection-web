@@ -39,7 +39,7 @@ GDRIVE_OTHER_MEDIA_FOLDER = "1IVAEar8sVEn_KJ7mQjZiLCsjDxD6uklo"
 
 def get_last_updated() -> dt.datetime:
     data = requests.get("https://paulklinger.com/ceramics/data/data.json").json()
-    timestamp_str = data.get("last_updated", dt.datetime.min.isoformat())
+    timestamp_str = data.get("last_updated", "2025-12-14T21:34:00")
     return dt.datetime.fromisoformat(timestamp_str)
 
 
