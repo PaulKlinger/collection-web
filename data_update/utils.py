@@ -1,3 +1,4 @@
+import datetime as dt
 import os
 from collections.abc import Callable
 from collections.abc import Iterator
@@ -33,7 +34,9 @@ class GoogleDrive:
     def get_folder_contents(self, folder_id: str) -> Iterator[dict[str, Any]]:
         files = self.drive.files()
         query = f"'{folder_id}' in parents and trashed = false"
-        response = files.list(q=query).execute()
+        response = files.list(
+            q=query, fields="files(modifiedTime,name,id),nextPageToken"
+        ).execute()
         yield from response["files"]
         while "nextPageToken" in response:
             response = files.list(
@@ -41,9 +44,14 @@ class GoogleDrive:
             ).execute()
             yield from response["files"]
 
-    def download_all_files_in_folder(self, folder_id: str, target_dir: str) -> None:
+    def download_all_files_in_folder(
+        self, folder_id: str, target_dir: str, newer_than: dt.datetime
+    ) -> None:
         os.makedirs(target_dir, exist_ok=True)
         for file in self.get_folder_contents(folder_id):
+            if dt.datetime.fromisoformat(file["modifiedTime"][:-1]) <= newer_than:
+                continue
+
             print(".", end="")
             with open(os.path.join(target_dir, file["name"]), "wb") as f:
                 f.write(self.drive.files().get_media(fileId=file["id"]).execute())

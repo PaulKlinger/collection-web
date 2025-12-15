@@ -1,3 +1,4 @@
+import datetime as dt
 import json
 import logging
 import os
@@ -7,6 +8,7 @@ from typing import Any
 
 import pygsheets
 import pysftp
+import requests
 
 from .utils import GoogleDrive
 from .utils import put_r_portable
@@ -33,6 +35,12 @@ GDRIVE_360_VID_THUMB_FOLDER = "1lmPF0VXHsV_UKPV1tchHIGyJI3lL_kui"
 GDRIVE_WORKS_FOLDER = "1AjS1gmkS6HIRZ7Kf0PwCDB1Fbo2G-MKg"
 GDRIVE_ARTISTS_FOLDER = "1eU55sTp7qE1rjGEhls7aADmMNoYeBfsP"
 GDRIVE_OTHER_MEDIA_FOLDER = "1IVAEar8sVEn_KJ7mQjZiLCsjDxD6uklo"
+
+
+def get_last_updated() -> dt.datetime:
+    data = requests.get("https://paulklinger.com/ceramics/data/data.json").json()
+    timestamp_str = data.get("last_updated", dt.datetime.min.isoformat())
+    return dt.datetime.fromisoformat(timestamp_str)
 
 
 def write_secrets_to_file() -> None:
@@ -166,9 +174,12 @@ def download_media() -> None:
     gdrive = GoogleDrive(
         "./secrets/google_photos_credentials.json", "./secrets/drive_api_storage.json"
     )
+    last_updated = get_last_updated()
 
     with tempfile.TemporaryDirectory() as tempdir:
-        gdrive.download_all_files_in_folder(GDRIVE_ARTISTS_FOLDER, tempdir)
+        gdrive.download_all_files_in_folder(
+            GDRIVE_ARTISTS_FOLDER, tempdir, newer_than=last_updated
+        )
         resize_imgs(
             tempdir,
             os.path.join(WEB_BASE_PATH, ARTIST_IMG_PATH),
@@ -177,7 +188,9 @@ def download_media() -> None:
         )
 
     with tempfile.TemporaryDirectory() as tempdir:
-        gdrive.download_all_files_in_folder(GDRIVE_OTHER_MEDIA_FOLDER, tempdir)
+        gdrive.download_all_files_in_folder(
+            GDRIVE_OTHER_MEDIA_FOLDER, tempdir, newer_than=last_updated
+        )
         resize_imgs(
             tempdir,
             os.path.join(WEB_BASE_PATH, OTHER_MEDIA_PATH),
@@ -186,7 +199,9 @@ def download_media() -> None:
         )
 
     with tempfile.TemporaryDirectory() as tempdir:
-        gdrive.download_all_files_in_folder(GDRIVE_WORKS_FOLDER, tempdir)
+        gdrive.download_all_files_in_folder(
+            GDRIVE_WORKS_FOLDER, tempdir, newer_than=last_updated
+        )
         resize_imgs(
             tempdir,
             os.path.join(WEB_BASE_PATH, WORK_IMGS_PATH),
@@ -205,11 +220,15 @@ def download_media() -> None:
     )
     # download videos
     gdrive.download_all_files_in_folder(
-        GDRIVE_360_VID_FOLDER, os.path.join(WEB_BASE_PATH, WORK_VID_PATH)
+        GDRIVE_360_VID_FOLDER,
+        os.path.join(WEB_BASE_PATH, WORK_VID_PATH),
+        newer_than=last_updated,
     )
     # download video thumbnails
     gdrive.download_all_files_in_folder(
-        GDRIVE_360_VID_THUMB_FOLDER, os.path.join(WEB_BASE_PATH, WORK_VID_THUMB_PATH)
+        GDRIVE_360_VID_THUMB_FOLDER,
+        os.path.join(WEB_BASE_PATH, WORK_VID_THUMB_PATH),
+        newer_than=last_updated,
     )
 
 
@@ -218,6 +237,9 @@ def create_json_data(
     output_path: str,
 ) -> None:
     os.makedirs(os.path.split(output_path)[0], exist_ok=True)
+    data["last_updated"] = dt.datetime.now(dt.timezone.utc).strftime(
+        "%Y-%m-%dT%H:%M:%S"
+    )
     with open(output_path, "w") as f:
         json.dump(data, f)
 
