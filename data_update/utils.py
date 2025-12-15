@@ -40,7 +40,9 @@ class GoogleDrive:
         yield from response["files"]
         while "nextPageToken" in response:
             response = files.list(
-                q=query, pageToken=response["nextPageToken"]
+                q=query,
+                fields="files(modifiedTime,name,id),nextPageToken",
+                pageToken=response["nextPageToken"],
             ).execute()
             yield from response["files"]
 
