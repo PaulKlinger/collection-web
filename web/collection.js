@@ -232,7 +232,9 @@ const create_work_elem = (work, artist) => {
         </div>
         <div class="work_details">
           <p class="work_head">
-            <span class="work_title">${work.title}${work.year ? "," : ""}</span>
+            <span class="work_title">${work.title}${
+              work.year && work.title ? "," : ""
+            }</span>
             <span class="work_year">${work.year}</span>
           </p>
           <p class="work_artist_name">${artist.name}</p>
