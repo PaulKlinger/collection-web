@@ -12,7 +12,6 @@ packages = [
 [tool.poetry.dependencies]
 python = "^3.12"
 requests = "^2.31.0"
-pysftp = "^0.2.9"
 pandas = "^2.2.2"
 pygsheets = "^2.0.6"
 google-api-python-client = "^2.169.0"
