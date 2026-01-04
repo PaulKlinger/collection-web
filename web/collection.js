@@ -12,14 +12,27 @@ window.onload = () => {
 
 const setup_page_from_url = () => {
   const params = new URLSearchParams(window.location.search);
-  setup_page(params.get("page"), params.get("work"), params.get("artist"));
+  setup_page(
+    params.get("page"),
+    params.get("sort"),
+    params.get("work"),
+    params.get("artist"),
+  );
+  document.getElementById("sort_select").value = params.get("sort") || "id";
 };
 
-const setup_page = (page, work, artist) => {
+const setup_page = (page, sort, work, artist) => {
+  if (sort === null) {
+    sort = "id";
+  }
   if (page === "artists") {
-    populate_artists();
+    document.getElementById("artists_select").classList.add("tab_selected");
+    document.getElementById("works_select").classList.remove("tab_selected");
+    populate_artists(sort);
   } else {
-    populate_works();
+    document.getElementById("works_select").classList.add("tab_selected");
+    document.getElementById("artists_select").classList.remove("tab_selected");
+    populate_works(sort);
   }
   if (artist !== null) {
     const elem = document.getElementById(`artist_${artist}`);
@@ -50,7 +63,7 @@ const elem_from_string = (s) => {
   return parser.parseFromString(s, "text/html").body.childNodes[0];
 };
 
-const set_params = (page, work, artist) => {
+const set_params = (page, work, artist, sort) => {
   const baseurl = window.location.href.split("?")[0];
   const params = new URLSearchParams(window.location.search);
   if (page === "works") {
@@ -70,6 +83,11 @@ const set_params = (page, work, artist) => {
   } else {
     params.set("artist", artist);
   }
+  if (sort === null) {
+    params.delete("sort");
+  } else {
+    params.set("sort", sort);
+  }
   if (params.size === 0) {
     history.replaceState(null, "", baseurl);
   } else {
@@ -82,13 +100,18 @@ const setup_buttons = () => {
     document.getElementById("greet").classList.toggle("collapsed");
   };
   document.getElementById("works_select").onclick = () => {
-    populate_works();
-    set_params("works", null, null);
+    set_params("works", null, null, null);
+    setup_page_from_url();
   };
 
   document.getElementById("artists_select").onclick = () => {
-    populate_artists();
-    set_params("artists", null, null);
+    set_params("artists", null, null, null);
+    setup_page_from_url();
+  };
+
+  document.getElementById("sort_select").onchange = (e) => {
+    set_params(null, null, null, e.target.value);
+    setup_page_from_url();
   };
 };
 
@@ -342,11 +365,139 @@ const create_work_elem = (work, artist) => {
   return work_elem;
 };
 
-const populate_works = () => {
+const get_artist_last_name = (artist_id) => {
+  const artist_name = data.artists[artist_id].name;
+  const name_parts = artist_name.trim().split(" ");
+  return name_parts[name_parts.length - 1];
+};
+
+const rand_normal = (mean, stddev) => {
+  const norm =
+    Math.sqrt(-2 * Math.log(1 - Math.random())) *
+    Math.cos(2 * Math.PI * Math.random());
+  return norm * stddev + mean;
+};
+
+const compute_randomized_scores = () => {
+  for (const work of Object.values(data.works)) {
+    work["❤_randomized"] = work["❤"] + rand_normal(0, 2);
+  }
+};
+
+const get_sorted_work_keys = (sort) => {
+  const keys = Object.keys(data.works);
+  if (sort === "id") {
+    // no sorting needed
+  } else if (sort === "artist_lastname") {
+    keys.sort((a, b) => {
+      const artist_a = get_artist_last_name(data.works[a].artist_id);
+      const artist_b = get_artist_last_name(data.works[b].artist_id);
+      return artist_a.localeCompare(artist_b);
+    });
+  } else if (sort === "acquired") {
+    keys.sort((a, b) => {
+      return data.works[a].acquired.localeCompare(data.works[b].acquired);
+    });
+  } else if (sort === "❤") {
+    compute_randomized_scores();
+    keys.sort((a, b) => {
+      return data.works[b]["❤_randomized"] - data.works[a]["❤_randomized"];
+    });
+  }
+  return keys;
+};
+
+const get_sorted_artist_keys = (sort) => {
+  const keys = Object.keys(data.artists);
+  if (sort === "id") {
+    // no sorting needed
+  } else if (sort === "artist_lastname") {
+    keys.sort((a, b) => {
+      const artist_a = get_artist_last_name(a);
+      const artist_b = get_artist_last_name(b);
+      return artist_a.localeCompare(artist_b);
+    });
+  } else if (sort === "acquired") {
+    keys.sort((a, b) => {
+      const acquired_min_a = Object.values(data.works)
+        .filter((w) => w.artist_id === a)
+        .map((w) => w.acquired)
+        .reduce((min, c) => (c < min ? c : min));
+      const acquired_min_b = Object.values(data.works)
+        .filter((w) => w.artist_id === b)
+        .map((w) => w.acquired)
+        .reduce((min, c) => (c < min ? c : min));
+      return acquired_min_a.localeCompare(acquired_min_b);
+    });
+  } else if (sort === "❤") {
+    compute_randomized_scores();
+    keys.sort((a, b) => {
+      const artist_a_works = Object.values(data.works).filter(
+        (w) => w.artist_id === a,
+      );
+      const artist_a_work_mean_score =
+        artist_a_works.reduce((sum, w) => sum + w["❤_randomized"], 0) /
+        artist_a_works.length;
+      const artist_b_works = Object.values(data.works).filter(
+        (w) => w.artist_id === b,
+      );
+      const artist_b_work_mean_score =
+        artist_b_works.reduce((sum, w) => sum + w["❤_randomized"], 0) /
+        artist_b_works.length;
+      return artist_b_work_mean_score - artist_a_work_mean_score;
+    });
+  }
+  return keys;
+};
+
+const get_work_sort_section = (sort, work) => {
+  if (sort === "id" || sort === "❤") {
+    return null;
+  } else if (sort === "artist_lastname") {
+    return get_artist_last_name(work.artist_id)[0].toUpperCase();
+  } else if (sort === "acquired") {
+    return work.acquired.split("-")[0];
+  }
+  console.error(`Unknown sort type for sectioning: ${sort}`);
+};
+
+const get_artist_sort_section = (sort, artist) => {
+  if (sort === "id" || sort === "❤") {
+    return null;
+  } else if (sort === "artist_lastname") {
+    return get_artist_last_name(artist.artist_id)[0].toUpperCase();
+  } else if (sort === "acquired") {
+    return Object.values(data.works)
+      .filter((w) => w.artist_id === artist.artist_id)
+      .map((w) => w.acquired)
+      .reduce((min, c) => (c < min ? c : min))
+      .split("-")[0];
+  }
+  console.error(`Unknown sort type for sectioning: ${sort}`);
+};
+
+const create_section_elem = (section_name) => {
+  return elem_from_string(`
+    <div class="section_header">
+      <h3>${section_name}</h3>
+    </div>
+  `);
+};
+
+const populate_works = (sort) => {
   const works_elem = document.getElementById("main_list");
   works_elem.innerHTML = "";
-  for (const work of Object.values(data.works)) {
-    works_elem.append(create_work_elem(work, data.artists[work.artist_id]));
+  const keys = get_sorted_work_keys(sort);
+  let last_section = null;
+  for (const k of keys) {
+    const section = get_work_sort_section(sort, data.works[k]);
+    if (section !== null && section !== last_section) {
+      works_elem.append(create_section_elem(section));
+    }
+    last_section = section;
+    works_elem.append(
+      create_work_elem(data.works[k], data.artists[data.works[k].artist_id]),
+    );
   }
 };
 
@@ -455,10 +606,19 @@ const create_artist_elem = (artist, works) => {
   return artist_elem;
 };
 
-const populate_artists = () => {
+const populate_artists = (sort) => {
   const artists_elem = document.getElementById("main_list");
   artists_elem.innerHTML = "";
-  for (const [artist_id, artist] of Object.entries(data.artists)) {
+  const keys = get_sorted_artist_keys(sort);
+  let last_section = null;
+  for (const artist_id of keys) {
+    const artist = data.artists[artist_id];
+    const section = get_artist_sort_section(sort, artist);
+    if (section !== null && section !== last_section) {
+      artists_elem.append(create_section_elem(section));
+    }
+    last_section = section;
+
     artists_elem.append(
       create_artist_elem(
         artist,
