@@ -82,7 +82,7 @@ def get_tabular_data() -> dict[str, Any]:
         [
             "id",
             "artist_id",
-            "❤️",
+            "❤",
             "acquired",
             "title",
             "year",
