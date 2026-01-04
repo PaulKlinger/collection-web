@@ -1,4 +1,5 @@
 let data;
+const DEFAULT_SORT = "❤";
 
 window.onload = () => {
   fetch("./data/data.json")
@@ -12,7 +13,7 @@ window.onload = () => {
 
 const setup_page_from_url = () => {
   const params = new URLSearchParams(window.location.search);
-  const sort = params.get("sort") || "❤";
+  const sort = params.get("sort") || DEFAULT_SORT;
   setup_page(
     params.get("page"),
     sort,
@@ -81,9 +82,9 @@ const set_params = (page, work, artist, sort) => {
   } else {
     params.set("artist", artist);
   }
-  if (sort === null) {
+  if (sort === DEFAULT_SORT) {
     params.delete("sort");
-  } else {
+  } else if (sort !== null) {
     params.set("sort", sort);
   }
   if (params.size === 0) {
@@ -335,7 +336,7 @@ const create_work_elem = (work, artist) => {
 
   // add click handler for close button
   work_elem.querySelector(".close").onclick = () => {
-    set_params(null, null, null);
+    set_params(null, null, null, null);
     work_elem.querySelector(".entry_main_img").classList.remove("hide");
     work_elem.querySelector(".video_container").classList.add("hide");
     work_elem.classList.replace("entry_full", "entry_thumb");
@@ -349,7 +350,7 @@ const create_work_elem = (work, artist) => {
 
   // add click handler for opening work
   work_elem.querySelector(".entry_main_img").onclick = () => {
-    set_params(null, work.id, null);
+    set_params(null, work.id, null, null);
     if (work_elem.classList.contains("entry_thumb")) {
       work_elem.classList.replace("entry_thumb", "entry_full");
       work_elem
@@ -604,7 +605,7 @@ const create_artist_elem = (artist, works) => {
 
   // add click handler for close button
   artist_elem.querySelector(".close").onclick = () => {
-    set_params("artists", null, null);
+    set_params("artists", null, null, null);
     artist_elem.classList.replace("entry_full", "entry_thumb");
     artist_elem
       .querySelectorAll(".only_full")
@@ -620,7 +621,7 @@ const create_artist_elem = (artist, works) => {
 
   // add click handler for opening artist
   artist_elem.querySelector(".entry_main_img").onclick = () => {
-    set_params("artists", null, artist.artist_id);
+    set_params("artists", null, artist.artist_id, null);
     if (artist_elem.classList.contains("entry_thumb")) {
       artist_elem.classList.replace("entry_thumb", "entry_full");
       artist_elem.querySelectorAll(".only_full").forEach((n) =>
