@@ -189,14 +189,19 @@ footer :visited {
   cursor: pointer;
 }
 
-#main_list {
+#main_list_container {
+  width: auto;
   max-width: 710px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 0;
+}
+
+#main_list {
   width: auto;
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
-  margin-left: auto;
-  margin-right: auto;
 }
 
 .entry_full {
