@@ -12,19 +12,17 @@ window.onload = () => {
 
 const setup_page_from_url = () => {
   const params = new URLSearchParams(window.location.search);
+  const sort = params.get("sort") || "❤";
   setup_page(
     params.get("page"),
-    params.get("sort"),
+    sort,
     params.get("work"),
     params.get("artist"),
   );
-  document.getElementById("sort_select").value = params.get("sort") || "id";
+  document.getElementById("sort_select").value = sort;
 };
 
 const setup_page = (page, sort, work, artist) => {
-  if (sort === null) {
-    sort = "id";
-  }
   if (page === "artists") {
     document.getElementById("artists_select").classList.add("tab_selected");
     document.getElementById("works_select").classList.remove("tab_selected");
@@ -299,8 +297,8 @@ const create_work_elem = (work, artist) => {
 
   // add click handler for artist (switch to artist page and expand matching)
   const open_artist = () => {
-    set_params("artists", null, artist.artist_id);
-    setup_page("artists", null, artist.artist_id);
+    set_params("artists", null, artist.artist_id, null);
+    setup_page_from_url();
   };
   work_elem.querySelector(".work_artist").onclick = open_artist;
   work_elem.querySelector(".work_artist_name").onclick = open_artist;
@@ -403,6 +401,18 @@ const get_sorted_work_keys = (sort) => {
     keys.sort((a, b) => {
       return data.works[b]["❤_randomized"] - data.works[a]["❤_randomized"];
     });
+  } else if (sort === "artist_origin") {
+    keys.sort((a, b) => {
+      const artist_a = data.artists[data.works[a].artist_id];
+      const artist_b = data.artists[data.works[b].artist_id];
+      return artist_a.origin.localeCompare(artist_b.origin);
+    });
+  } else if (sort === "artist_residence") {
+    keys.sort((a, b) => {
+      const artist_a = data.artists[data.works[a].artist_id];
+      const artist_b = data.artists[data.works[b].artist_id];
+      return artist_a.residence.localeCompare(artist_b.residence);
+    });
   }
   return keys;
 };
@@ -446,6 +456,14 @@ const get_sorted_artist_keys = (sort) => {
         artist_b_works.length;
       return artist_b_work_mean_score - artist_a_work_mean_score;
     });
+  } else if (sort === "artist_origin") {
+    keys.sort((a, b) => {
+      return data.artists[a].origin.localeCompare(data.artists[b].origin);
+    });
+  } else if (sort === "artist_residence") {
+    keys.sort((a, b) => {
+      return data.artists[a].residence.localeCompare(data.artists[b].residence);
+    });
   }
   return keys;
 };
@@ -457,6 +475,10 @@ const get_work_sort_section = (sort, work) => {
     return get_artist_last_name(work.artist_id)[0].toUpperCase();
   } else if (sort === "acquired") {
     return work.acquired.split("-")[0];
+  } else if (sort === "artist_origin") {
+    return data.artists[work.artist_id].origin;
+  } else if (sort === "artist_residence") {
+    return data.artists[work.artist_id].residence;
   }
   console.error(`Unknown sort type for sectioning: ${sort}`);
 };
@@ -472,6 +494,10 @@ const get_artist_sort_section = (sort, artist) => {
       .map((w) => w.acquired)
       .reduce((min, c) => (c < min ? c : min))
       .split("-")[0];
+  } else if (sort === "artist_origin") {
+    return artist.origin;
+  } else if (sort === "artist_residence") {
+    return artist.residence;
   }
   console.error(`Unknown sort type for sectioning: ${sort}`);
 };
