@@ -1,10 +1,8 @@
 import datetime as dt
 import os
-from collections.abc import Callable
 from collections.abc import Iterator
 from typing import Any
 
-import pysftp
 from googleapiclient import discovery
 from httplib2 import Http
 from oauth2client import client
@@ -57,27 +55,3 @@ class GoogleDrive:
             print(".", end="")
             with open(os.path.join(target_dir, file["name"]), "wb") as f:
                 f.write(self.drive.files().get_media(fileId=file["id"]).execute())
-
-
-def put_r_portable(
-    sftp: pysftp.Connection,
-    localdir: str,
-    remotedir: str,
-    preserve_mtime: bool = False,
-    skip_if_exists: Callable[[str], bool] = lambda p: False,
-) -> None:
-    # https://stackoverflow.com/a/58466685/7089433
-    for entry in os.listdir(localdir):
-        remotepath = remotedir + "/" + entry
-        localpath = os.path.join(localdir, entry)
-        if not os.path.isfile(localpath):
-            try:
-                sftp.mkdir(remotepath)
-            except OSError:
-                pass
-            put_r_portable(sftp, localpath, remotepath, preserve_mtime, skip_if_exists)
-        else:
-            if skip_if_exists(localpath) and sftp.exists(remotepath):
-                continue
-            print(f"{localpath} -> {remotepath}")
-            sftp.put(localpath, remotepath, preserve_mtime=preserve_mtime)

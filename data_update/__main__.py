@@ -7,11 +7,9 @@ import tempfile
 from typing import Any
 
 import pygsheets
-import pysftp
 import requests
 
 from .utils import GoogleDrive
-from .utils import put_r_portable
 
 SECRETS = {
     "GDRIVE_SECRET": "./secrets/gdocs_service.json",
@@ -250,24 +248,6 @@ def create_json_data(
         json.dump(data, f)
 
 
-def upload_to_server() -> None:
-    with open("./secrets/ftp_secrets.json") as f:
-        ftp_secrets = json.load(f)
-
-    cnopts = pysftp.CnOpts()
-    cnopts.hostkeys = None  # type: ignore
-
-    with pysftp.Connection(
-        ftp_secrets["NAMECHEAP_SERVER"],
-        username=ftp_secrets["NAMECHEAP_USERNAME"],
-        password=ftp_secrets["NAMECHEAP_PASSWORD"],
-        port=ftp_secrets["NAMECHEAP_PORT"],
-        cnopts=cnopts,
-    ) as sftp:
-        with sftp.cd("public_html"):
-            put_r_portable(sftp, "web", "ceramics")
-
-
 def main() -> None:
     update_media = os.getenv("UPDATE_MEDIA", "true").lower() == "true"
 
@@ -290,8 +270,6 @@ def main() -> None:
     if update_media:
         logging.info("Downloading media")
         download_media()
-    logging.info("Uploading files")
-    upload_to_server()
 
 
 if __name__ == "__main__":
