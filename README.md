@@ -1,6 +1,6 @@
 Code and github actions worflow for [paulklinger.com/ceramics](https://paulklinger.com/ceramics), a site that documents my collection of contemporary ceramic art.
 
-The update_site workflow pulls data from a google sheet, images from two google photos albums, and videos from google drive, creates a json metadata file, and pushes everything to the web server.
+The update_site workflow pulls data from a google sheet and images and videos from google drive, creates a json metadata file, and pushes everything to [PaulKlinger/paulklinger.com](https://github.com/PaulKlinger/paulklinger.com) which is deployed via Cloudflare workers.
 
 ### Notes
 
