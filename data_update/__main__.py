@@ -159,7 +159,7 @@ def resize_imgs(
     for file in os.listdir(input_folder):
         subprocess.run(
             [
-                "magick",
+                "convert",
                 os.path.join(input_folder, file),
                 "-resize",
                 f"{target_width}x{target_height}>",
