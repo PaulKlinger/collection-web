@@ -13,11 +13,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Setup ImageMagick
-        uses: mfinelli/setup-imagemagick@v6.0.1
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Install imagemagick
+        run: |
+          sudo apt install imagemagick
       - name: Install poetry
         uses: abatilo/actions-poetry@v2
         with:
