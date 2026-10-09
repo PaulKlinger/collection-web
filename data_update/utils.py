@@ -33,13 +33,13 @@ class GoogleDrive:
         files = self.drive.files()
         query = f"'{folder_id}' in parents and trashed = false"
         response = files.list(
-            q=query, fields="files(createdTime,name,id),nextPageToken"
+            q=query, fields="files(createdTime,modifiedTime,name,id),nextPageToken"
         ).execute()
         yield from response["files"]
         while "nextPageToken" in response:
             response = files.list(
                 q=query,
-                fields="files(createdTime,name,id),nextPageToken",
+                fields="files(createdTime,modifiedTime,name,id),nextPageToken",
                 pageToken=response["nextPageToken"],
             ).execute()
             yield from response["files"]
@@ -49,7 +49,12 @@ class GoogleDrive:
     ) -> None:
         os.makedirs(target_dir, exist_ok=True)
         for file in self.get_folder_contents(folder_id):
-            if dt.datetime.fromisoformat(file["createdTime"][:-1]) <= newer_than:
+            if (
+                dt.datetime.fromisoformat(
+                    max(file["createdTime"][:-1], file["modifiedTime"][:-1])
+                )
+                <= newer_than
+            ):
                 continue
 
             print(".", end="")
