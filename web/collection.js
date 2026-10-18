@@ -1,6 +1,12 @@
 let data;
 const DEFAULT_SORT = "❤";
 
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("./sw.js").catch(() => {
+    // offline support is best-effort; the site works without it
+  });
+}
+
 window.onload = () => {
   fetch("./data/data.json")
     .then((response) => response.json())
@@ -8,6 +14,7 @@ window.onload = () => {
       data = data_in;
       setup_buttons();
       setup_page_from_url();
+      setup_offline_link();
     });
 };
 
@@ -653,4 +660,145 @@ const populate_artists = (sort) => {
       ),
     );
   }
+};
+
+// ---------- offline ----------
+
+// Keep the cache name in sync with CACHE in sw.js. The service worker
+// serves everything in this cache without a network connection.
+const OFFLINE_CACHE = "ceramics-v1";
+
+// The only external resources the page uses; they are cached so that
+// the fonts work offline too.
+const FONT_CSS_URLS = [
+  "https://fonts.googleapis.com/css2?family=MuseoModerno:wght@600&family=Ubuntu&display=swap",
+  "https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,100..900;1,100..900&display=swap",
+];
+
+// Every URL needed to use the collection offline, including the 360°
+// videos. Derived from data.json, so new works are picked up
+// automatically.
+const offline_urls = async () => {
+  const urls = new Set([
+    "./",
+    "./index.html",
+    "./style.css",
+    "./collection.js",
+    "./sort.svg",
+    "./favicon.svg",
+    "./ceramics.webmanifest",
+    "./icon-192.png",
+    "./icon-512.png",
+    "./icon-maskable-512.png",
+    "./data/data.json",
+    "./data/media/me.jpg",
+  ]);
+  for (const artist of Object.values(data.artists)) {
+    if (artist.img) {
+      urls.add(artist.img);
+    }
+  }
+  for (const work of Object.values(data.works)) {
+    for (const medium of work.media) {
+      urls.add(medium.full_path);
+      urls.add(medium.thumb_path);
+    }
+  }
+  // the font stylesheets and the font files they reference
+  for (const css_url of FONT_CSS_URLS) {
+    urls.add(css_url);
+    try {
+      const css = await (await fetch(css_url)).text();
+      for (const match of css.matchAll(/url\((https:[^)]+)\)/g)) {
+        urls.add(match[1]);
+      }
+    } catch {
+      // fonts are a nice-to-have; the collection itself still caches
+    }
+  }
+  return [...urls].map((url) => new URL(url, window.location.href).href);
+};
+
+const setup_offline_link = async () => {
+  const link = document.getElementById("offline_link");
+  const progress = document.getElementById("offline_progress");
+  if (!("caches" in window)) {
+    link.remove();
+    return;
+  }
+  const urls = await offline_urls();
+  const cache = await caches.open(OFFLINE_CACHE);
+  // Only the collection itself counts towards "missing": the fonts
+  // are cached best-effort and must not block the offline state.
+  const collection_urls = urls.filter((url) =>
+    url.startsWith(window.location.origin),
+  );
+  const count_missing = async () => {
+    const checks = await Promise.all(
+      collection_urls.map((url) => cache.match(url)),
+    );
+    return checks.filter((hit) => hit === undefined).length;
+  };
+  if ((await count_missing()) === 0) {
+    link.textContent = "offline ✓";
+    link.title = "The whole collection is downloaded for offline use";
+  }
+  let downloading = false;
+  link.onclick = async (event) => {
+    event.preventDefault();
+    if (downloading) {
+      return;
+    }
+    const to_download = await count_missing();
+    if (to_download === 0) {
+      link.textContent = "offline ✓";
+      link.title = "The whole collection is downloaded for offline use";
+      return;
+    }
+    // ~800 MB, mostly the videos: ask first, in case the connection
+    // is metered
+    if (
+      !window.confirm(
+        `Download ${to_download} files (~800 MB) so the whole collection works offline?`,
+      )
+    ) {
+      return;
+    }
+    downloading = true;
+    if (navigator.storage && navigator.storage.persist) {
+      // ask the browser not to evict the cache under storage pressure
+      navigator.storage.persist().catch(() => {});
+    }
+    let done = 0;
+    let failed = 0;
+    progress.max = urls.length;
+    progress.value = 0;
+    progress.hidden = false;
+    const queue = [...urls];
+    const download_some = async () => {
+      while (queue.length > 0) {
+        const url = queue.shift();
+        if ((await cache.match(url)) === undefined) {
+          try {
+            await cache.add(url);
+          } catch {
+            if (url.startsWith(window.location.origin)) {
+              failed += 1;
+            }
+          }
+        }
+        done += 1;
+        progress.value = done;
+      }
+    };
+    await Promise.all(Array.from({ length: 6 }, download_some));
+    progress.hidden = true;
+    downloading = false;
+    if (failed === 0) {
+      link.textContent = "offline ✓";
+      link.title = "The whole collection is downloaded for offline use";
+    } else {
+      link.title = `${failed} files failed to download — tap to try again`;
+    }
+  };
 };
