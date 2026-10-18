@@ -122,11 +122,21 @@ footer {
   padding: 8px;
   font-size: 10pt;
   color: rgb(150, 150, 150);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-sizing: border-box;
 }
 
-footer a {
-  position: absolute;
-  right: 10px;
+#footer_links {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+#offline_progress {
+  width: 80px;
+  height: 8px;
 }
 
 footer :link,

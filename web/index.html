@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#fafafa" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
     <title>Ceramics</title>
     <link rel="stylesheet" href="style.css" />
@@ -83,7 +84,18 @@
       </div>
       <footer>
         <span>Paul Klinger 2024</span>
-        <a href="https://github.com/PaulKlinger/collection-web">source code</a>
+        <span id="footer_links">
+          <a
+            href="#"
+            id="offline_link"
+            title="Download the whole collection for offline use"
+            >offline</a
+          >
+          <progress id="offline_progress" value="0" max="100" hidden></progress>
+          <a href="https://github.com/PaulKlinger/collection-web"
+            >source code</a
+          >
+        </span>
       </footer>
     </div>
   </body>

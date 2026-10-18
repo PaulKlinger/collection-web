@@ -1,10 +1,20 @@
 {
-  "name": "Ceramics",
+  "background_color": "#fafafa",
+  "display": "standalone",
   "icons": [
+    { "sizes": "192x192", "src": "favicon.svg", "type": "image/svg+xml" },
+    { "sizes": "192x192", "src": "icon-192.png", "type": "image/png" },
+    { "sizes": "512x512", "src": "icon-512.png", "type": "image/png" },
     {
-      "src": "favicon.svg",
-      "sizes": "192x192",
-      "type": "image/svg+xml"
+      "purpose": "maskable",
+      "sizes": "512x512",
+      "src": "icon-maskable-512.png",
+      "type": "image/png"
     }
-  ]
+  ],
+  "name": "Ceramics",
+  "scope": ".",
+  "short_name": "Ceramics",
+  "start_url": ".",
+  "theme_color": "#fafafa"
 }
