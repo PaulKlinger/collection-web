@@ -18,7 +18,12 @@ jobs:
           python-version: "3.12"
       - name: Install imagemagick
         run: |
-          sudo apt install imagemagick
+          # The runner image's package index goes stale: without an
+          # update, apt tries to fetch .deb versions that have been
+          # superseded in the Ubuntu pool and 404s (seen 2026-10-25
+          # for the ghostscript packages).
+          sudo apt-get update
+          sudo apt-get install -y imagemagick
       - name: Install poetry
         uses: abatilo/actions-poetry@v2
         with:
