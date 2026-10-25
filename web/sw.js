@@ -88,7 +88,7 @@ const ensure_media_gen = async () => {
     return;
   }
   const cache = await get_main_cache();
-  const cached = await cache.match("./data/data.json", { ignoreSearch: true });
+  const cached = await cache.match("./data/data.json");
   if (cached) {
     await note_data_json(cached);
   }
@@ -154,7 +154,13 @@ const serve_media = async (request) => {
     // Generation unknown (data.json not cached yet): fetch as usual.
     return fetch(request);
   }
-  const hit = await bucket.match(request, { ignoreSearch: true });
+  // No ignoreSearch here (or anywhere near the media bucket): with it,
+  // the browser cannot use the URL index and instead scans every key
+  // in the bucket comparing URLs — with ~800 cached files that turns
+  // each image lookup into an O(n) scan and a page load into O(n^2).
+  // Media URLs are always requested exactly as stored, so an exact
+  // match is correct and O(1).
+  const hit = await bucket.match(request);
   if (hit) {
     return hit;
   }
@@ -167,7 +173,7 @@ const serve_media = async (request) => {
 
 const serve_font = async (request) => {
   const cache = await get_main_cache();
-  const hit = await cache.match(request, { ignoreSearch: true });
+  const hit = await cache.match(request);
   if (hit) {
     return hit;
   }
@@ -188,7 +194,7 @@ const serve_data_json = async (request) => {
     }
     return response;
   } catch (error) {
-    const hit = await cache.match(request, { ignoreSearch: true });
+    const hit = await cache.match(request);
     if (hit) {
       await note_data_json(hit);
       return hit;
@@ -198,7 +204,10 @@ const serve_data_json = async (request) => {
 };
 
 // Stale-while-revalidate for the page shell: instant loads, updates
-// land on the next visit.
+// land on the next visit. ignoreSearch stays ONLY here: navigations
+// can carry ?page=/?sort= query strings while the shell is cached
+// without them, and this bucket holds ~11 entries, so the key scan
+// costs nothing.
 const serve_shell = async (request) => {
   const cache = await get_main_cache();
   const hit = await cache.match(request, { ignoreSearch: true });
