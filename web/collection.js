@@ -813,18 +813,15 @@ const setup_offline_link = async () => {
   let cache = await caches.open(OFFLINE_CACHE);
   // Media files live in a bucket named by media generation (the
   // last_media_updated of the current data), matching the service
-  // worker's scheme (see sw.js). A media file also counts as present
-  // if it is still in the main bucket, where older builds put it.
+  // worker's scheme (see sw.js). Everything else is in the main
+  // bucket.
   const media_cache_name = () =>
     `ceramics-media-${data.last_media_updated || "unknown"}`;
   const is_media_url = (url) => url.includes("/data/media/");
   const find_in_caches = async (url) => {
     if (is_media_url(url)) {
       const media_cache = await caches.open(media_cache_name());
-      const hit = await media_cache.match(url);
-      if (hit) {
-        return hit;
-      }
+      return media_cache.match(url);
     }
     return cache.match(url);
   };

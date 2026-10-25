@@ -10,12 +10,13 @@
 // - data.json is network-first (the page itself renders instantly from
 //   its cached copy and swaps in the network copy when the timestamps
 //   in it change), falling back to the cache when offline.
-// - Media files are cache-first, but bucketed by media generation:
-//   the bucket name carries the last_media_updated timestamp of the
-//   data.json that described them. When the generation moves on, a
-//   cached file from an older bucket is re-fetched while online and
-//   served as-is while offline, so a replaced photo eventually shows
-//   up without ever leaving a gap.
+// - Media files are cache-first and live in a single bucket named by
+//   media generation: the last_media_updated timestamp of the current
+//   data.json. When the generation moves on, the new bucket starts
+//   empty and fills on view / via the offline link — a photo replaced
+//   under the same filename therefore shows up fresh, and the old
+//   bucket is deleted on activation. There is deliberately no
+//   fallback to older buckets: one lookup per file, nothing else.
 // - Fonts are cache-first in the main bucket.
 //
 // The footer "offline" link (see collection.js) fills the caches with
@@ -37,7 +38,6 @@ const CORE = [
   "./icon-512.png",
   "./icon-maskable-512.png",
   "./data/data.json",
-  "./data/media/me.jpg",
 ];
 
 // The media generation (last_media_updated of the newest data.json
@@ -45,7 +45,32 @@ const CORE = [
 // refreshed whenever a network copy of data.json passes through.
 let media_gen = null;
 
+// Cache handles are kept open for the worker's lifetime: re-opening a
+// bucket for every request measurably slows down image loads.
+let main_cache_promise = null;
+let gen_cache_promise = null;
+let gen_cache_name = null;
+
+const get_main_cache = () => {
+  if (!main_cache_promise) {
+    main_cache_promise = caches.open(CACHE);
+  }
+  return main_cache_promise;
+};
+
 const media_bucket = () => MEDIA_PREFIX + (media_gen || "unknown");
+
+const get_gen_cache = async () => {
+  await ensure_media_gen();
+  if (!media_gen) {
+    return null;
+  }
+  if (!gen_cache_promise || gen_cache_name !== media_bucket()) {
+    gen_cache_name = media_bucket();
+    gen_cache_promise = caches.open(gen_cache_name);
+  }
+  return gen_cache_promise;
+};
 
 const note_data_json = async (response) => {
   try {
@@ -62,7 +87,7 @@ const ensure_media_gen = async () => {
   if (media_gen) {
     return;
   }
-  const cache = await caches.open(CACHE);
+  const cache = await get_main_cache();
   const cached = await cache.match("./data/data.json", { ignoreSearch: true });
   if (cached) {
     await note_data_json(cached);
@@ -82,7 +107,22 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(
     (async () => {
       media_gen = null;
+      gen_cache_promise = null;
+      gen_cache_name = null;
       await ensure_media_gen();
+      // Drop media files that older builds stored in the main bucket.
+      const main = await get_main_cache();
+      const requests = await main.keys();
+      await Promise.all(
+        requests
+          .filter((request) =>
+            new URL(request.url).pathname.includes("/data/media/"),
+          )
+          .map((request) => main.delete(request)),
+      );
+      // Drop every bucket that is neither the main one nor the current
+      // media generation (if the generation is unknown, keep the media
+      // buckets rather than risk deleting the current one).
       const keys = await caches.keys();
       await Promise.all(
         keys
@@ -91,8 +131,6 @@ self.addEventListener("activate", (event) => {
               return false;
             }
             if (key.startsWith(MEDIA_PREFIX)) {
-              // keep the current generation's bucket; if the generation
-              // is unknown, keep them all rather than risk the media
               return media_gen !== null && key !== media_bucket();
             }
             return true;
@@ -110,46 +148,15 @@ const is_font = (url) =>
   url.hostname === "fonts.googleapis.com" ||
   url.hostname === "fonts.gstatic.com";
 
-// A media file that predates generation buckets (or sits in an older
-// one): still servable while offline, revalidated while online.
-const find_stale_media = async (request) => {
-  const main = await caches.open(CACHE);
-  const hit = await main.match(request, { ignoreSearch: true });
-  if (hit) {
-    return hit;
-  }
-  const keys = await caches.keys();
-  for (const key of keys) {
-    if (key.startsWith(MEDIA_PREFIX) && key !== media_bucket()) {
-      const bucket = await caches.open(key);
-      const stale = await bucket.match(request, { ignoreSearch: true });
-      if (stale) {
-        return stale;
-      }
-    }
-  }
-  return undefined;
-};
-
 const serve_media = async (request) => {
-  await ensure_media_gen();
-  const bucket = await caches.open(media_bucket());
+  const bucket = await get_gen_cache();
+  if (!bucket) {
+    // Generation unknown (data.json not cached yet): fetch as usual.
+    return fetch(request);
+  }
   const hit = await bucket.match(request, { ignoreSearch: true });
   if (hit) {
     return hit;
-  }
-  const stale = await find_stale_media(request);
-  if (stale) {
-    try {
-      const fresh = await fetch(request);
-      if (fresh.ok || fresh.type === "opaque") {
-        await bucket.put(request, fresh.clone());
-        return fresh;
-      }
-      return stale;
-    } catch {
-      return stale;
-    }
   }
   const response = await fetch(request);
   if (response.ok || response.type === "opaque") {
@@ -159,7 +166,7 @@ const serve_media = async (request) => {
 };
 
 const serve_font = async (request) => {
-  const cache = await caches.open(CACHE);
+  const cache = await get_main_cache();
   const hit = await cache.match(request, { ignoreSearch: true });
   if (hit) {
     return hit;
@@ -172,7 +179,7 @@ const serve_font = async (request) => {
 };
 
 const serve_data_json = async (request) => {
-  const cache = await caches.open(CACHE);
+  const cache = await get_main_cache();
   try {
     const response = await fetch(request);
     if (response.ok) {
@@ -193,7 +200,7 @@ const serve_data_json = async (request) => {
 // Stale-while-revalidate for the page shell: instant loads, updates
 // land on the next visit.
 const serve_shell = async (request) => {
-  const cache = await caches.open(CACHE);
+  const cache = await get_main_cache();
   const hit = await cache.match(request, { ignoreSearch: true });
   const network = fetch(request).then((response) => {
     if (response.ok) {
