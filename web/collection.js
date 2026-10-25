@@ -1,10 +1,38 @@
 let data;
 const DEFAULT_SORT = "❤";
 
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("./sw.js").catch(() => {
-    // offline support is best-effort; the site works without it
-  });
+// Offline support is opt-in: the service worker is registered only
+// once a visitor enables it via the footer "offline" link (the choice
+// is remembered in localStorage). Until then nothing is cached.
+const OFFLINE_FLAG = "ceramics_offline_enabled";
+
+const offline_opted_in = () => {
+  try {
+    return localStorage.getItem(OFFLINE_FLAG) === "1";
+  } catch {
+    return false;
+  }
+};
+
+const set_offline_opted_in = () => {
+  try {
+    localStorage.setItem(OFFLINE_FLAG, "1");
+  } catch {
+    // storage unavailable (private mode etc.): offline still works,
+    // it just isn't remembered for the next visit
+  }
+};
+
+const register_service_worker = () => {
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("./sw.js").catch(() => {
+      // offline support is best-effort; the site works without it
+    });
+  }
+};
+
+if (offline_opted_in()) {
+  register_service_worker();
 }
 
 window.onload = () => {
@@ -727,7 +755,7 @@ const setup_offline_link = async () => {
     return;
   }
   const urls = await offline_urls();
-  const cache = await caches.open(OFFLINE_CACHE);
+  let cache = await caches.open(OFFLINE_CACHE);
   // Only the collection itself counts towards "missing": the fonts
   // are cached best-effort and must not block the offline state.
   const collection_urls = urls.filter((url) =>
@@ -739,7 +767,31 @@ const setup_offline_link = async () => {
     );
     return checks.filter((hit) => hit === undefined).length;
   };
-  if ((await count_missing()) === 0) {
+  if (!offline_opted_in()) {
+    // Not enabled on this device. Earlier builds registered the
+    // service worker for everyone; undo that, unless the collection
+    // was actually downloaded — that download was already an opt-in,
+    // so remember it as one.
+    const registration =
+      "serviceWorker" in navigator
+        ? await navigator.serviceWorker.getRegistration("./")
+        : undefined;
+    if (registration && (await count_missing()) === 0) {
+      set_offline_opted_in();
+      register_service_worker();
+    } else {
+      if (registration) {
+        await registration.unregister().catch(() => {});
+      }
+      for (const key of await caches.keys()) {
+        if (key.startsWith("ceramics-")) {
+          await caches.delete(key);
+        }
+      }
+      cache = await caches.open(OFFLINE_CACHE);
+    }
+  }
+  if (offline_opted_in() && (await count_missing()) === 0) {
     link.textContent = "offline ✓";
     link.title = "The whole collection is downloaded for offline use";
   }
@@ -751,6 +803,9 @@ const setup_offline_link = async () => {
     }
     const to_download = await count_missing();
     if (to_download === 0) {
+      // already downloaded: following the link is the opt-in
+      set_offline_opted_in();
+      register_service_worker();
       link.textContent = "offline ✓";
       link.title = "The whole collection is downloaded for offline use";
       return;
@@ -763,6 +818,18 @@ const setup_offline_link = async () => {
       )
     ) {
       return;
+    }
+    // Confirmed: this is the opt-in. Remember it and register the
+    // service worker before filling the cache, so later visits are
+    // served offline.
+    set_offline_opted_in();
+    register_service_worker();
+    if ("serviceWorker" in navigator) {
+      try {
+        await navigator.serviceWorker.ready;
+      } catch {
+        // best-effort: the download below works without the worker
+      }
     }
     downloading = true;
     if (navigator.storage && navigator.storage.persist) {
