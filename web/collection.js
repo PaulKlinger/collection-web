@@ -1,21 +1,103 @@
 let data;
 const DEFAULT_SORT = "❤";
 
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("./sw.js").catch(() => {
-    // offline support is best-effort; the site works without it
-  });
+// Offline support is opt-in: the service worker is registered only
+// once a visitor enables it via the footer "offline" link (the choice
+// is remembered in localStorage). Until then nothing is cached.
+const OFFLINE_FLAG = "ceramics_offline_enabled";
+
+const offline_opted_in = () => {
+  try {
+    return localStorage.getItem(OFFLINE_FLAG) === "1";
+  } catch {
+    return false;
+  }
+};
+
+const set_offline_opted_in = () => {
+  try {
+    localStorage.setItem(OFFLINE_FLAG, "1");
+  } catch {
+    // storage unavailable (private mode etc.): offline still works,
+    // it just isn't remembered for the next visit
+  }
+};
+
+const register_service_worker = () => {
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("./sw.js").catch(() => {
+      // offline support is best-effort; the site works without it
+    });
+  }
+};
+
+if (offline_opted_in()) {
+  register_service_worker();
 }
 
 window.onload = () => {
-  fetch("./data/data.json")
-    .then((response) => response.json())
-    .then((data_in) => {
-      data = data_in;
-      setup_buttons();
+  load_data();
+};
+
+const setup_after_data = () => {
+  setup_buttons();
+  setup_page_from_url();
+  setup_offline_link();
+};
+
+// Render instantly from the cached data.json when there is one, then
+// fetch the network copy in the background and swap it in if its
+// timestamps say anything changed (see refresh_data). Without a
+// cached copy, load from the network as before.
+const load_data = async () => {
+  let cached = null;
+  if ("caches" in window) {
+    try {
+      const cache = await caches.open(OFFLINE_CACHE);
+      const hit = await cache.match("./data/data.json");
+      if (hit) {
+        cached = await hit.json();
+      }
+    } catch {
+      // no usable cache: fall through to the network load
+    }
+  }
+  if (cached) {
+    data = cached;
+    setup_after_data();
+    refresh_data();
+  } else {
+    fetch("./data/data.json")
+      .then((response) => response.json())
+      .then((data_in) => {
+        data = data_in;
+        setup_after_data();
+      });
+  }
+};
+
+// Background refresh after a cache-first render. data.json carries
+// last_updated / last_media_updated timestamps: only if one of them
+// moved do we adopt the fresh copy and re-render the current view.
+// Media files are handled by the service worker, which buckets them
+// by last_media_updated (see sw.js).
+const refresh_data = async () => {
+  try {
+    const response = await fetch("./data/data.json");
+    if (!response.ok) {
+      return;
+    }
+    const fresh = await response.json();
+    if (
+      fresh.last_updated !== data.last_updated ||
+      fresh.last_media_updated !== data.last_media_updated
+    ) {
+      data = fresh;
       setup_page_from_url();
-      setup_offline_link();
-    });
+    }
+  } catch {
+    // offline: the cached copy stays
+  }
 };
 
 const setup_page_from_url = () => {
@@ -664,8 +746,9 @@ const populate_artists = (sort) => {
 
 // ---------- offline ----------
 
-// Keep the cache name in sync with CACHE in sw.js. The service worker
-// serves everything in this cache without a network connection.
+// Keep the cache name in sync with CACHE in sw.js: the main bucket
+// (page shell, data.json, fonts). Media files go in a generation
+// bucket named after last_media_updated, as in sw.js.
 const OFFLINE_CACHE = "ceramics-v1";
 
 // The only external resources the page uses; they are cached so that
@@ -727,7 +810,26 @@ const setup_offline_link = async () => {
     return;
   }
   const urls = await offline_urls();
-  const cache = await caches.open(OFFLINE_CACHE);
+  let cache = await caches.open(OFFLINE_CACHE);
+  // Media files live in a bucket named by media generation (the
+  // last_media_updated of the current data), matching the service
+  // worker's scheme (see sw.js). A media file also counts as present
+  // if it is still in the main bucket, where older builds put it.
+  const media_cache_name = () =>
+    `ceramics-media-${data.last_media_updated || "unknown"}`;
+  const is_media_url = (url) => url.includes("/data/media/");
+  const find_in_caches = async (url) => {
+    if (is_media_url(url)) {
+      const media_cache = await caches.open(media_cache_name());
+      const hit = await media_cache.match(url);
+      if (hit) {
+        return hit;
+      }
+    }
+    return cache.match(url);
+  };
+  const write_cache_for = async (url) =>
+    is_media_url(url) ? caches.open(media_cache_name()) : cache;
   // Only the collection itself counts towards "missing": the fonts
   // are cached best-effort and must not block the offline state.
   const collection_urls = urls.filter((url) =>
@@ -735,11 +837,35 @@ const setup_offline_link = async () => {
   );
   const count_missing = async () => {
     const checks = await Promise.all(
-      collection_urls.map((url) => cache.match(url)),
+      collection_urls.map((url) => find_in_caches(url)),
     );
     return checks.filter((hit) => hit === undefined).length;
   };
-  if ((await count_missing()) === 0) {
+  if (!offline_opted_in()) {
+    // Not enabled on this device. Earlier builds registered the
+    // service worker for everyone; undo that, unless the collection
+    // was actually downloaded — that download was already an opt-in,
+    // so remember it as one.
+    const registration =
+      "serviceWorker" in navigator
+        ? await navigator.serviceWorker.getRegistration("./")
+        : undefined;
+    if (registration && (await count_missing()) === 0) {
+      set_offline_opted_in();
+      register_service_worker();
+    } else {
+      if (registration) {
+        await registration.unregister().catch(() => {});
+      }
+      for (const key of await caches.keys()) {
+        if (key.startsWith("ceramics-")) {
+          await caches.delete(key);
+        }
+      }
+      cache = await caches.open(OFFLINE_CACHE);
+    }
+  }
+  if (offline_opted_in() && (await count_missing()) === 0) {
     link.textContent = "offline ✓";
     link.title = "The whole collection is downloaded for offline use";
   }
@@ -751,6 +877,9 @@ const setup_offline_link = async () => {
     }
     const to_download = await count_missing();
     if (to_download === 0) {
+      // already downloaded: following the link is the opt-in
+      set_offline_opted_in();
+      register_service_worker();
       link.textContent = "offline ✓";
       link.title = "The whole collection is downloaded for offline use";
       return;
@@ -763,6 +892,18 @@ const setup_offline_link = async () => {
       )
     ) {
       return;
+    }
+    // Confirmed: this is the opt-in. Remember it and register the
+    // service worker before filling the cache, so later visits are
+    // served offline.
+    set_offline_opted_in();
+    register_service_worker();
+    if ("serviceWorker" in navigator) {
+      try {
+        await navigator.serviceWorker.ready;
+      } catch {
+        // best-effort: the download below works without the worker
+      }
     }
     downloading = true;
     if (navigator.storage && navigator.storage.persist) {
@@ -778,9 +919,10 @@ const setup_offline_link = async () => {
     const download_some = async () => {
       while (queue.length > 0) {
         const url = queue.shift();
-        if ((await cache.match(url)) === undefined) {
+        if ((await find_in_caches(url)) === undefined) {
           try {
-            await cache.add(url);
+            const target = await write_cache_for(url);
+            await target.add(url);
           } catch {
             if (url.startsWith(window.location.origin)) {
               failed += 1;
