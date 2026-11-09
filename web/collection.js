@@ -209,7 +209,46 @@ const setup_360_vid = (work_elem, work, vid_url) => {
   const vid = vid_elem.cloneNode(true);
   vid_elem.replaceWith(vid);
 
-  vid.last_updated = Date.now();
+  // Scrubbing: a seek is async, and setting currentTime while a seek
+  // is still in flight makes the browser discard/queue seeks. On
+  // slower decoders (notably Chrome's hardware decoder on Pixel)
+  // that piles up and the picture jumps behind the pointer, so
+  // pointermove only records the latest target time. One
+  // requestAnimationFrame at a time issues the seek, and only when
+  // no seek is in flight; a target that arrives mid-seek is applied
+  // from the seeked event.
+  vid.scrub_target = null;
+  vid.scrub_raf = 0;
+  vid.scrub_pending = false;
+  const apply_scrub = () => {
+    vid.scrub_raf = 0;
+    if (vid.scrub_target === null) {
+      return;
+    }
+    if (vid.seeking) {
+      vid.scrub_pending = true;
+      return;
+    }
+    // skip seeks smaller than half a frame: they only churn the decoder
+    if (Math.abs(vid.currentTime - vid.scrub_target) < 0.017) {
+      vid.scrub_target = null;
+      return;
+    }
+    vid.scrub_pending = false;
+    vid.currentTime = vid.scrub_target;
+    vid.scrub_target = null;
+  };
+  const request_scrub = () => {
+    if (!vid.scrub_raf) {
+      vid.scrub_raf = requestAnimationFrame(apply_scrub);
+    }
+  };
+  vid.addEventListener("seeked", () => {
+    if (vid.scrub_pending && vid.scrub_target !== null) {
+      vid.scrub_pending = false;
+      request_scrub();
+    }
+  });
   vid.addEventListener(
     "pointerdown",
     (e) => {
@@ -217,6 +256,8 @@ const setup_360_vid = (work_elem, work, vid_url) => {
         vid.pause();
         vid.start_x = e.offsetX;
         vid.start_cur_time = vid.currentTime;
+        vid.scrub_target = null;
+        vid.scrub_pending = false;
       }
       e.preventDefault();
       vid.parentElement.querySelector(".swipe_hint").classList.add("hide");
@@ -226,29 +267,27 @@ const setup_360_vid = (work_elem, work, vid_url) => {
   vid.addEventListener(
     "pointermove",
     (e) => {
-      // seek to new position if mouse/touch is pressed and
-      // it's been at least 20ms since the last seek
-      if (e.buttons & (1 === 1) && Date.now() - vid.last_updated > 20) {
-        if (vid.start_cur_time === undefined) {
-          // pointer down happened outside of video element
-          vid.pause();
-          vid.start_cur_time = vid.currentTime;
-          vid.start_x = e.offsetX;
-          vid.parentElement.querySelector(".swipe_hint").classList.add("hide");
-          return;
-        }
-        if (!(vid.duration > 0)) {
-          return;
-        }
-        // fraction of video element width that the pointer has moved since start of motion
-        const fraction_moved = (e.offsetX - vid.start_x) / vid.offsetWidth;
-        const new_time =
-          (vid.start_cur_time + vid.duration * fraction_moved + vid.duration) %
-          vid.duration;
-        vid.currentTime = new_time;
-        vid.last_updated = Date.now();
-        e.preventDefault();
+      if (!(e.buttons & (1 === 1))) {
+        return;
       }
+      if (vid.start_cur_time === undefined) {
+        // pointer down happened outside of video element
+        vid.pause();
+        vid.start_cur_time = vid.currentTime;
+        vid.start_x = e.offsetX;
+        vid.parentElement.querySelector(".swipe_hint").classList.add("hide");
+        return;
+      }
+      if (!(vid.duration > 0)) {
+        return;
+      }
+      // fraction of video element width that the pointer has moved since start of motion
+      const fraction_moved = (e.offsetX - vid.start_x) / vid.offsetWidth;
+      vid.scrub_target =
+        (vid.start_cur_time + vid.duration * fraction_moved + vid.duration) %
+        vid.duration;
+      request_scrub();
+      e.preventDefault();
     },
     true,
   );
