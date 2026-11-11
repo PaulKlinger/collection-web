@@ -852,20 +852,45 @@ const setup_offline_link = async () => {
   let cache = await caches.open(OFFLINE_CACHE);
   // Media files live in a bucket named by media generation (the
   // last_media_updated of the current data), matching the service
-  // worker's scheme (see sw.js). Everything else is in the main
+  // worker's scheme (see sw.js). If data.json carries no generation,
+  // use the newest media bucket already on the device (same fallback
+  // as sw.js), so a completed download keeps counting — resolved
+  // once per generation value, so a data refresh that restores the
+  // field switches buckets with it. Everything else is in the main
   // bucket.
-  const media_cache_name = () =>
-    `ceramics-media-${data.last_media_updated || "unknown"}`;
+  let media_cache_name_state = { gen: undefined, promise: null };
+  const media_cache_name = () => {
+    const gen = data.last_media_updated || null;
+    if (media_cache_name_state.gen !== gen) {
+      media_cache_name_state = {
+        gen,
+        promise: (async () => {
+          if (gen) {
+            return `ceramics-media-${gen}`;
+          }
+          const keys = await caches.keys();
+          const gens = keys
+            .filter((key) => key.startsWith("ceramics-media-"))
+            .map((key) => key.slice("ceramics-media-".length))
+            .sort();
+          return `ceramics-media-${
+            gens.length > 0 ? gens[gens.length - 1] : "unknown"
+          }`;
+        })(),
+      };
+    }
+    return media_cache_name_state.promise;
+  };
   const is_media_url = (url) => url.includes("/data/media/");
   const find_in_caches = async (url) => {
     if (is_media_url(url)) {
-      const media_cache = await caches.open(media_cache_name());
+      const media_cache = await caches.open(await media_cache_name());
       return media_cache.match(url);
     }
     return cache.match(url);
   };
   const write_cache_for = async (url) =>
-    is_media_url(url) ? caches.open(media_cache_name()) : cache;
+    is_media_url(url) ? caches.open(await media_cache_name()) : cache;
   // Only the collection itself counts towards "missing": the fonts
   // are cached best-effort and must not block the offline state.
   const collection_urls = urls.filter((url) =>

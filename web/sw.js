@@ -17,6 +17,9 @@
 //   under the same filename therefore shows up fresh, and the old
 //   bucket is deleted on activation. There is deliberately no
 //   fallback to older buckets: one lookup per file, nothing else.
+//   If data.json carries no last_media_updated at all, the worker
+//   uses the newest media bucket already on the device instead of
+//   serving nothing from cache (see ensure_media_gen).
 // - Fonts are cache-first in the main bucket.
 //
 // The footer "offline" link (see collection.js) fills the caches with
@@ -76,6 +79,9 @@ const note_data_json = async (response) => {
   try {
     const parsed = await response.clone().json();
     if (parsed && parsed.last_media_updated) {
+      // A real generation always wins over the newest-bucket fallback
+      // below, even mid-lifetime: the page derives its bucket from
+      // the same field, so the two must agree.
       media_gen = parsed.last_media_updated;
     }
   } catch {
@@ -91,6 +97,23 @@ const ensure_media_gen = async () => {
   const cached = await cache.match("./data/data.json");
   if (cached) {
     await note_data_json(cached);
+  }
+  if (media_gen) {
+    return;
+  }
+  // data.json carries no last_media_updated (a data-only site update
+  // dropped the field on 2026-11-09): fall back to the newest media
+  // bucket already on the device, so a completed offline download
+  // keeps serving. Without this, get_gen_cache() returns null and
+  // every media request bypasses the cache entirely — the page
+  // downloads into a bucket nothing ever reads.
+  const keys = await caches.keys();
+  const gens = keys
+    .filter((key) => key.startsWith(MEDIA_PREFIX))
+    .map((key) => key.slice(MEDIA_PREFIX.length))
+    .sort();
+  if (gens.length > 0) {
+    media_gen = gens[gens.length - 1];
   }
 };
 
