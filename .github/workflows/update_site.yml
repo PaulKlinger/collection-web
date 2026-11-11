@@ -26,9 +26,20 @@ jobs:
           # The runner image's package index goes stale: without an
           # update, apt tries to fetch .deb versions that have been
           # superseded in the Ubuntu pool and 404s (seen 2026-10-25
-          # for the ghostscript packages).
-          sudo apt-get update
-          sudo apt-get install -y imagemagick
+          # for the ghostscript packages). And a runner's DNS/mirror
+          # can be broken outright (security.ubuntu.com
+          # unresolvable, exit 100, seen 2026-11-11) — retry a few
+          # times before giving up, since the failure is usually
+          # transient per runner.
+          for attempt in 1 2 3; do
+            if sudo apt-get update && sudo apt-get install -y imagemagick; then
+              exit 0
+            fi
+            echo "apt attempt $attempt failed, retrying in 30s..."
+            sleep 30
+          done
+          echo "apt failed after 3 attempts" >&2
+          exit 1
       - name: Install poetry
         uses: abatilo/actions-poetry@v2
         with:
