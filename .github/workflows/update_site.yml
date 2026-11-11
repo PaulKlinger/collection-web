@@ -16,7 +16,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      # ImageMagick is only used by download_media/resize_imgs, which
+      # data-only runs skip entirely — so don't let a flaky apt
+      # install block them (a runner's DNS failure for
+      # security.ubuntu.com killed two data-only runs on 2026-11-11).
       - name: Install imagemagick
+        if: ${{ inputs.update_media == 'true' }}
         run: |
           # The runner image's package index goes stale: without an
           # update, apt tries to fetch .deb versions that have been
