@@ -34,10 +34,15 @@ GDRIVE_WORKS_FOLDER = "1AjS1gmkS6HIRZ7Kf0PwCDB1Fbo2G-MKg"
 GDRIVE_ARTISTS_FOLDER = "1eU55sTp7qE1rjGEhls7aADmMNoYeBfsP"
 GDRIVE_OTHER_MEDIA_FOLDER = "1IVAEar8sVEn_KJ7mQjZiLCsjDxD6uklo"
 
+# Fallback generation used when the live data.json carries no
+# last_media_updated (e.g. it was dropped by a data-only update):
+# just a stable bucket label, not a claim about the media.
+DEFAULT_LAST_MEDIA_UPDATED = "2025-12-14T21:34:00"
+
 
 def get_last_media_updated() -> dt.datetime:
     data = requests.get("https://paulklinger.com/ceramics/data/data.json").json()
-    timestamp_str = data.get("last_media_updated", "2025-12-14T21:34:00")
+    timestamp_str = data.get("last_media_updated", DEFAULT_LAST_MEDIA_UPDATED)
     return dt.datetime.fromisoformat(timestamp_str)
 
 
@@ -244,6 +249,19 @@ def create_json_data(
         data["last_media_updated"] = dt.datetime.now(dt.timezone.utc).strftime(
             "%Y-%m-%dT%H:%M:%S"
         )
+    else:
+        # Data-only update: the media generation must not disappear.
+        # Without it, the site's offline code has no media bucket to
+        # serve from — a data-only run dropped the field on
+        # 2026-11-09 and broke offline media entirely (the worker
+        # bypassed the cache and the footer link downloaded into a
+        # bucket nothing ever read). Carry the previous value forward.
+        try:
+            previous = get_last_media_updated()
+        except Exception:
+            logging.warning("could not read previous last_media_updated; using default")
+            previous = dt.datetime.fromisoformat(DEFAULT_LAST_MEDIA_UPDATED)
+        data["last_media_updated"] = previous.strftime("%Y-%m-%dT%H:%M:%S")
     with open(output_path, "w") as f:
         json.dump(data, f)
 
